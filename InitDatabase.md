@@ -6,19 +6,7 @@
 CREATE DATABASE "postgres";
 ```
 
-# 2. Create the user
-
-```
-CREATE USER
-    "postgres"
-    WITH
-        LOGIN
-        PASSWORD
-        'postgres';
-GRANT ALL PRIVILEGES ON DATABASE "postgres" TO "postgres";
-```
-
-# 3. Create the table
+# 2. Create the table
 
 ```
 CREATE TABLE "postgres"."speed" (

@@ -1,13 +1,10 @@
+use crate::database::*;
 use crate::structs::api_response::ApiResponse;
 use crate::structs::data_sensor_request::CreateSensorDataRequest;
-use crate::structs::sensor_data::SensorData;
+use crate::structs::query_limit::QueryLimit;
 use crate::{database, AppState};
-use axum::{
-    extract::{Path, Query, State},
-    http::StatusCode,
-    response::Json,
-};
-use tracing::{error, info};
+use axum::extract::Query;
+use axum::{extract::State, http::StatusCode, response::Json};
 
 /// Handler functions for the API
 pub async fn health_check(
@@ -16,12 +13,9 @@ pub async fn health_check(
     match sqlx::query("SELECT 1").fetch_one(&state.db).await {
         Ok(_) => Ok(Json(ApiResponse::success(
             "API is healthy",
-            "Database connected".to_string(),
+            "Database connected".into(),
         ))),
-        Err(e) => {
-            error!("Database health check failed: {}", e);
-            Err(StatusCode::SERVICE_UNAVAILABLE)
-        }
+        Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
 }
 
@@ -29,23 +23,34 @@ pub async fn health_check(
 pub async fn create_speed_data(
     State(state): State<AppState>,
     Json(payload): Json<CreateSensorDataRequest>,
-) -> Result<Json<ApiResponse<SensorData>>, StatusCode> {
-    info!("Received sensor data from Arduino");
+) -> Result<StatusCode, StatusCode> {
+    match insert_speed_data(&state.db, payload).await {
+        Ok(bool) => Ok(if bool {
+            StatusCode::CREATED
+        } else {
+            StatusCode::BAD_REQUEST
+        }),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
 
-    match database::insert_speed_data(&state.db, payload).await {
-        Ok(sensor_data) => {
-            info!(
-                "Successfully inserted sensor data with ID: {}",
-                sensor_data.id
-            );
-            Ok(Json(ApiResponse::success(
-                "Data inserted successfully",
-                sensor_data,
-            )))
-        }
+// Retrieves the last n speed data entries from the database
+pub async fn get_speed_n_data(
+    State(state): State<AppState>,
+    Query(params): Query<QueryLimit>,
+) -> Result<Json<Vec<SensorData>>, StatusCode> {
+    let limit: u16 = params.limit.unwrap_or(100).min(1000);
+
+    match fetch_last_n_speed_data(&state.db, limit).await {
+        Ok(data) => Ok(Json(data)),
         Err(e) => {
-            error!("Failed to insert sensor data: {}", e);
+            eprintln!("Error fetching speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
+}
+
+/// Root handler for the API
+pub async fn root() -> &'static str {
+    "Sensor Data API - Running with Axum & MySQL"
 }

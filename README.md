@@ -9,8 +9,9 @@
 
 ## 📖 Overview
 
-A high-performance fractal renderer built in Rust with an interactive GUI for exploring the beautiful world of
-mathematical fractals including the Mandelbrot set, Julia sets, and more.
+API made with Rust and Axum, designed to handle speed data from sensor and store it in a PostgreSQL database. It
+provides endpoints to retrieve and submit speed data, making it suitable for applications that require real-time speed
+monitoring.
 
 ## ✨ Key Features
 
@@ -33,12 +34,29 @@ mathematical fractals including the Mandelbrot set, Julia sets, and more.
 - **Rust Compiler** (Install via [Rustup](https://rustup.rs/))
 - **Cargo Package Manager** (Installed with Rust)
 
-## 🚀 Getting Started
+## 🚀️ Endpoints
 
-### 1. Build and Run
+- **GET /health**: Check the health status of the API.
+- **POST /api/create-speed**: Submit new speed data into the database.
+- **GET /api/get-speed**: Retrieve speed data from the database.
+- **GET /api/get-speed?limit=500**: Retrieve speed data with a limit on the number of records returned.
+
+## Example Usage
+
+### 1. Insert Speed Data
 
 ```bash
-cargo run --release
+curl -X POST http://localhost:3000/api/create-speed \
+  -H "Content-Type: application/json" \
+  -d '{
+    "speed":145
+  }'
+```
+
+### 2. Retrieve Speed Data
+
+```bash
+curl -X GET http://localhost:3000/api/get-speed?limit=500
 ```
 
 ## 🤝 Contributing
