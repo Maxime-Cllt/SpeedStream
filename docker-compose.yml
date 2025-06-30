@@ -19,7 +19,7 @@ services:
     networks:
       - speedstream-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U speedstream -d speedstream_db"]
+      test: [ "CMD-SHELL", "pg_isready -U speedstream -d speedstream_db" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,7 +49,7 @@ services:
     networks:
       - speedstream-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
