@@ -8,6 +8,7 @@ pub struct ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
+    /// Creates a new ApiResponse with success status and data.
     pub fn success(message: &str, data: T) -> Self {
         Self {
             success: true,
@@ -15,12 +16,18 @@ impl<T> ApiResponse<T> {
             data: Some(data),
         }
     }
+}
 
-    pub fn error(message: &str) -> ApiResponse<()> {
-        ApiResponse {
-            success: false,
-            message: message.to_string(),
-            data: None,
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_api_response_success() {
+        let response: ApiResponse<String> =
+            ApiResponse::success("Operation successful", "Data".into());
+        assert!(response.success);
+        assert_eq!(response.message, "Operation successful");
+        assert_eq!(response.data, Some("Data".to_string()));
     }
 }

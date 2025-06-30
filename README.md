@@ -4,16 +4,22 @@
 
 <div align="center">
     <img src="https://img.shields.io/badge/Rust-dea584?style=for-the-badge&logo=rust&logoColor=white" alt="Rust" />
+    <img src="https://img.shields.io/badge/Axum-ff4f00?style=for-the-badge&logo=rust&logoColor=white" alt="Axum" />
+    <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
     <img src="https://img.shields.io/badge/Version-1.0.0-informational?style=for-the-badge" alt="Version" />
 </div>
 
 ## 📖 Overview
 
-API made with Rust and Axum, designed to handle speed data from sensor and store it in a PostgreSQL database. It
-provides endpoints to retrieve and submit speed data, making it suitable for applications that require real-time speed
-monitoring.
+SpeedStream is a blazingly fast REST API built with Rust and Axum, specifically designed for real-time speed data
+collection and monitoring. Perfect for IoT sensors, vehicle tracking systems, and performance monitoring applications.
 
 ## ✨ Key Features
+
+- ⚡ Ultra-Fast: Handles thousands of requests per second with minimal latency
+- 🔒 Memory Safe: Built with Rust's zero-cost abstractions and memory safety
+- 🏗️ Production Ready: Comprehensive error handling, logging, and health checks
+- 🌐 IoT Friendly: Optimized for Arduino, Raspberry Pi, and other embedded devices
 
 ## 💻 Platform Support
 
@@ -27,6 +33,9 @@ monitoring.
   <a href="#windows">  
     <img src="https://img.shields.io/badge/Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white&labelColor=gray" alt="Windows" />
   </a>
+    <a href="#docker">
+        <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white&labelColor=gray" alt="Docker" />
+    </a>
 </div>
 
 ## 📋 Prerequisites
@@ -38,10 +47,9 @@ monitoring.
 
 - **GET /health**: Check the health status of the API.
 - **POST /api/create-speed**: Submit new speed data into the database.
-- **GET /api/get-speed**: Retrieve speed data from the database.
 - **GET /api/get-speed?limit=500**: Retrieve speed data with a limit on the number of records returned.
 
-## Example Usage
+## 🧪 Example Usage
 
 ### 1. Insert Speed Data
 
