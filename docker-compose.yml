@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: speedstream-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: speedstream
+      POSTGRES_PASSWORD: speedstream123
+      POSTGRES_DB: speedstream_db
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - speedstream-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U speedstream -d speedstream_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Rust API Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: speedstream-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://speedstream:speedstream123@postgres:5432/speedstream_db
+      - REDIS_URL=redis://redis:6379
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=3000
+      - RUST_LOG=speedstream=debug,tower_http=debug
+      - DB_MAX_CONNECTIONS=20
+      - DB_MIN_CONNECTIONS=5
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - speedstream-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  speedstream-network:
+    driver: bridge

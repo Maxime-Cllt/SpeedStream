@@ -1,13 +1,13 @@
 use crate::structs::data_sensor_request::CreateSensorDataRequest;
 pub use crate::structs::sensor_data::SensorData;
-use sqlx::MySqlPool;
+use sqlx::PgPool;
 
 /// Inserts speed data into the database.
 pub async fn insert_speed_data(
-    db: &MySqlPool,
+    db: &PgPool,
     payload: CreateSensorDataRequest,
 ) -> Result<bool, sqlx::Error> {
-    const QUERY_INSERT: &str = "INSERT INTO speed (speed) VALUES (?)";
+    const QUERY_INSERT: &str = "INSERT INTO speed (speed) VALUES ($1)";
     sqlx::query(QUERY_INSERT)
         .bind(payload.speed)
         .execute(db)
@@ -17,11 +17,11 @@ pub async fn insert_speed_data(
 
 /// Fetches the last n speed data entries from the database.
 pub async fn fetch_last_n_speed_data(
-    db: &MySqlPool,
+    db: &PgPool,
     number: u16,
 ) -> Result<Vec<SensorData>, sqlx::Error> {
-    const QUERY: &str = "SELECT id, speed, created_at FROM speed ORDER BY id DESC LIMIT ?";
-    let rows = sqlx::query_as::<_, SensorData>(QUERY)
+    const QUERY: &str = "SELECT id, speed, created_at FROM speed ORDER BY created_at DESC LIMIT $1";
+    let rows: Vec<SensorData> = sqlx::query_as::<_, SensorData>(QUERY)
         .bind(number as i64)
         .fetch_all(db)
         .await?;

@@ -1,1 +1,1 @@
-pub const DATABASE_URL: &str = "mysql://HHBL8703:@localhost:3308/test";
+pub const DATABASE_URL: &str = "mysql://speedstream:speedstream123@localhost:3308/speedstream_db";

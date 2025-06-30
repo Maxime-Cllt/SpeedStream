@@ -57,15 +57,15 @@ pub async fn root() -> &'static str {
 
 #[cfg(test)]
 mod tests {
+    use sqlx::postgres::PgPoolOptions;
     use super::*;
     use crate::constant::DATABASE_URL;
     use crate::structs::app_state::AppState;
-    use sqlx::mysql::MySqlPoolOptions;
 
     #[tokio::test]
     async fn test_health_check() {
         let state = AppState {
-            db: MySqlPoolOptions::new()
+            db: PgPoolOptions::new()
                 .max_connections(1)
                 .connect(DATABASE_URL)
                 .await
@@ -80,13 +80,13 @@ mod tests {
     #[tokio::test]
     async fn test_create_speed_data() {
         let state = AppState {
-            db: MySqlPoolOptions::new()
+            db: PgPoolOptions::new()
                 .max_connections(1)
                 .connect(DATABASE_URL)
                 .await
                 .unwrap(),
         };
-        let payload = CreateSensorDataRequest { speed: Some(42) };
+        let payload = CreateSensorDataRequest { speed: 42.0 };
         let response = create_speed_data(State(state), Json(payload)).await;
         assert!(response.is_ok());
         assert_eq!(response.unwrap(), StatusCode::CREATED);
@@ -95,7 +95,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_speed_n_data() {
         let state = AppState {
-            db: MySqlPoolOptions::new()
+            db: PgPoolOptions::new()
                 .max_connections(1)
                 .connect(DATABASE_URL)
                 .await

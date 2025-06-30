@@ -1,6 +1,6 @@
-use sqlx::MySqlPool;
+use sqlx::{PgPool};
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: MySqlPool,
+    pub db: PgPool,
 }

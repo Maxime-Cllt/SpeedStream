@@ -2,10 +2,10 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use sqlx::postgres::PgPoolOptions;
 use speed_stream::constant::DATABASE_URL;
 use speed_stream::handler::{create_speed_data, get_speed_n_data, health_check, root};
 use speed_stream::structs::app_state::AppState;
-use sqlx::mysql::MySqlPoolOptions;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -13,7 +13,7 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Sensor API Server...");
 
-    let pool = MySqlPoolOptions::new()
+    let pool = PgPoolOptions::new()
         .max_connections(10)
         .connect(DATABASE_URL)
         .await?;
