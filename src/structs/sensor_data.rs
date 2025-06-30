@@ -5,12 +5,12 @@ use sqlx::FromRow;
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct SensorData {
     pub id: u32,
-    pub speed: u16,
+    pub speed: f32,
     pub created_at: DateTime<Utc>,
 }
 
 impl SensorData {
-    pub const fn new(id: u32, speed: u16, created_at: DateTime<Utc>) -> Self {
+    pub const fn new(id: u32, speed: f32, created_at: DateTime<Utc>) -> Self {
         Self {
             id,
             speed,
@@ -27,7 +27,7 @@ mod tests {
     #[tokio::test]
     async fn test_sensor_data_creation() {
         let id = 1;
-        let speed = 100;
+        let speed = 10.0;
         let created_at = Utc.with_ymd_and_hms(2023, 10, 1, 12, 0, 0).unwrap();
         let sensor_data = SensorData::new(id, speed, created_at);
 

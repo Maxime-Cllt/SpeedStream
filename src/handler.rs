@@ -1,10 +1,10 @@
 use crate::database::*;
 use crate::structs::api_response::ApiResponse;
+use crate::structs::app_state::AppState;
 use crate::structs::data_sensor_request::CreateSensorDataRequest;
 use crate::structs::query_limit::QueryLimit;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
-use crate::structs::app_state::AppState;
 
 /// Handler functions for the API
 pub async fn health_check(

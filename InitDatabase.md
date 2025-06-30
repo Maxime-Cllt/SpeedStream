@@ -11,7 +11,7 @@ CREATE DATABASE "postgres";
 ```
 CREATE TABLE "postgres"."speed" (
     "id" SERIAL PRIMARY KEY,
-    "speed" INTEGER NOT NULL DEFAULT 0,
+    "speed" DECIMAL(5, 2) NOT NULL,
     "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
