@@ -2,5 +2,48 @@
 name = "SpeedStream"
 version = "0.1.0"
 edition = "2024"
+authors = ["Maxime-Cllt"]
 
 [dependencies]
+axum = "0.8.4"
+tokio = { version = "1.45.1", features = ["full"] }
+serde = { version = "1.0.219", features = ["derive"] }
+sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio-rustls", "chrono"] }
+tower = "0.5.2"
+tower-http = { version = "0.6.6", features = ["cors", "trace"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+chrono = { version = "0.4.41", features = ["serde"] }
+uuid = { version = "1.17.0", features = ["v4", "serde"] }
+anyhow = "1.0.98"
+http = "1.3.1"
+
+[dev-dependencies]
+
+
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true
+lto = false
+panic = "unwind"
+
+[profile.test]
+incremental = true
+opt-level = 1
+debug = false
+overflow-checks = true
+codegen-units = 50
+lto = false
+
+[profile.release]
+incremental = false
+opt-level = 3
+debug = false
+lto = "fat"
+codegen-units = 1
+overflow-checks = false
+panic = "abort"
+strip = "symbols"
+rpath = false
+debug-assertions = false
