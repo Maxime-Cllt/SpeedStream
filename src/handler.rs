@@ -71,6 +71,19 @@ pub async fn get_speed_pagination(
     }
 }
 
+/// Retrieves all speed data entries inserted today
+pub async fn get_speed_today(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<SensorData>>, StatusCode> {
+    match fetch_speed_data_today(&state.db).await {
+        Ok(data) => Ok(Json(data)),
+        Err(e) => {
+            eprintln!("Error fetching today's speed data: {e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
 /// Root handler for the API
 pub async fn root() -> &'static str {
     "Sensor Data API - Running with Axum & Postgres"

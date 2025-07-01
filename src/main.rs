@@ -2,10 +2,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use sqlx::postgres::PgPoolOptions;
 use speed_stream::constant::DATABASE_URL;
-use speed_stream::handler::{create_speed, get_last_n_speed, get_speed_pagination, health_check, root};
+use speed_stream::handler::{
+    create_speed, get_last_n_speed, get_speed_pagination, get_speed_today, health_check, root,
+};
 use speed_stream::structs::app_state::AppState;
+use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -28,6 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/create-speed", post(create_speed))
         .route("/api/get-speed", get(get_last_n_speed))
         .route("/api/get-speed/pagination", get(get_speed_pagination))
+        .route("/api/get-speed/today", get(get_speed_today))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);

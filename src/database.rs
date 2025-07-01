@@ -49,3 +49,13 @@ pub async fn fetch_speed_data_with_pagination(
         .map(|row| SensorData::new(row.id, row.speed, row.created_at))
         .collect())
 }
+
+/// Fetches all rows from inserted in the current day
+pub async fn fetch_speed_data_today(db: &PgPool) -> Result<Vec<SensorData>, sqlx::Error> {
+    const QUERY: &str = "SELECT id, speed, created_at FROM speed WHERE created_at >= CURRENT_DATE";
+    let rows: Vec<SensorData> = sqlx::query_as::<_, SensorData>(QUERY).fetch_all(db).await?;
+    Ok(rows
+        .into_iter()
+        .map(|row| SensorData::new(row.id, row.speed, row.created_at))
+        .collect())
+}
