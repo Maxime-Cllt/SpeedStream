@@ -35,7 +35,6 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://speedstream:speedstream123@postgres:5432/speedstream_db
-      - REDIS_URL=redis://redis:6379
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=3000
       - RUST_LOG=speedstream=debug,tower_http=debug
@@ -43,8 +42,6 @@ services:
       - DB_MIN_CONNECTIONS=5
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - speedstream-network
@@ -57,8 +54,6 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
     driver: local
 
 networks:

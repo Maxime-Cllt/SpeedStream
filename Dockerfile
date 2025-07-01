@@ -37,7 +37,7 @@ RUN useradd -r -s /bin/false speedstream
 WORKDIR /app
 
 # Copy the binary from builder stage
-COPY --from=builder /app/target/release/speedstream /app/speedstream
+COPY --from=builder /app/target/release/SpeedStream /app/speedstream
 
 # Change ownership
 RUN chown -R speedstream:speedstream /app
