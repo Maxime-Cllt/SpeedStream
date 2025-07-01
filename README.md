@@ -79,11 +79,25 @@ curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
 
 ```mermaid
 graph TD
-;
-    A[Arduino Sensor] -->|HTTP Request| B[Axum Server];
-    B -->|Database Query| C[PostgreSQL Database];
-    C -->|Response Data| B;
-    B -->|HTTP Response| A;
+%% Nodes
+  A[Arduino Sensor]
+  B[Axum Server]
+  C[PostgreSQL Database]
+
+%% Edges
+  A -->|Sends HTTP Request| B
+  B -->|Queries Database| C
+  C -->|Returns Data| B
+  B -->|Sends HTTP Response| A
+
+%% Styles
+  classDef arduino fill:#00979D,stroke:#004d4d,stroke-width:2px,color:#fff,font-weight:bold;
+  classDef axum fill:#dea584,stroke:#b36723,stroke-width:2px,color:#000,font-weight:bold;
+  classDef postgres fill:#336791,stroke:#1f3d5d,stroke-width:2px,color:#fff,font-weight:bold;
+
+  class A arduino;
+  class B axum;
+  class C postgres;
 ```
 
 ## 🤝 Contributing
@@ -95,7 +109,3 @@ Contributions are welcome! To contribute:
   ```bash
   git checkout -b feature/your-feature-name
     ```
-
-<p align="center">
-  Made with 🦀
-</p>
