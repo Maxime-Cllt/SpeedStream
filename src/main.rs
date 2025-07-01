@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(DATABASE_URL)
         .await?;
 
-    println!("Connected to MySQL database");
+    println!("Connected to Postgres database");
 
     let app_state = AppState { db: pool };
 

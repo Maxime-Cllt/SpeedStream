@@ -5,12 +5,12 @@ use sqlx::FromRow;
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct SensorData {
     pub id: i32,
-    pub speed: f64,
+    pub speed: f32,
     pub created_at: DateTime<Utc>,
 }
 
 impl SensorData {
-    pub const fn new(id: i32, speed: f64, created_at: DateTime<Utc>) -> Self {
+    pub const fn new(id: i32, speed: f32, created_at: DateTime<Utc>) -> Self {
         Self {
             id,
             speed,

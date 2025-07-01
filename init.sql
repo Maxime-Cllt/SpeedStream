@@ -8,6 +8,6 @@
 CREATE TABLE speed
 (
     id         SERIAL PRIMARY KEY,
-    speed      FLOAT NOT NULL,
+    speed      FLOAT4 NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

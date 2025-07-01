@@ -39,13 +39,13 @@ WORKDIR /app
 # Copy the binary from builder stage
 COPY --from=builder /app/target/release/SpeedStream /app/speedstream
 
-# Change ownership
+# Change ownership of the app directory to the app user
 RUN chown -R speedstream:speedstream /app
 
 # Switch to app user
 USER speedstream
 
-# Expose port
+# Expose port for Axum application
 EXPOSE 3000
 
 # Health check

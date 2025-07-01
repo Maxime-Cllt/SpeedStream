@@ -1,23 +1,17 @@
 use crate::database::*;
-use crate::structs::api_response::ApiResponse;
 use crate::structs::app_state::AppState;
-use crate::structs::data_sensor_request::CreateSensorDataRequest;
-use crate::structs::pagination_query::PaginationQuery;
-use crate::structs::query_limit::QueryLimit;
+use crate::structs::parameter::pagination_query::PaginationQuery;
+use crate::structs::parameter::query_limit::QueryLimit;
+use crate::structs::payload::create_speed_request::CreateSpeedDataRequest;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
 
 /// Handler functions for the API
-pub async fn health_check(
-    State(state): State<AppState>,
-) -> Result<Json<ApiResponse<String>>, StatusCode> {
+pub async fn health_check(State(state): State<AppState>) -> Result<Json<String>, StatusCode> {
     match sqlx::query("SELECT 1").fetch_one(&state.db).await {
         Ok(_) => {
             let today: String = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
-            Ok(Json(ApiResponse::success(
-                "API is healthy",
-                format!("{today} - Database connection is active"),
-            )))
+            Ok(Json(format!("API is healthy! Current time: {today}")))
         }
         Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
@@ -26,7 +20,7 @@ pub async fn health_check(
 /// Handler to create speed data from Arduino
 pub async fn create_speed(
     State(state): State<AppState>,
-    Json(payload): Json<CreateSensorDataRequest>,
+    Json(payload): Json<CreateSpeedDataRequest>,
 ) -> Result<StatusCode, StatusCode> {
     match insert_speed_data(&state.db, payload).await {
         Ok(bool) => Ok(if bool {
@@ -74,8 +68,10 @@ pub async fn get_speed_pagination(
 /// Retrieves all speed data entries inserted today
 pub async fn get_speed_today(
     State(state): State<AppState>,
+    Query(params): Query<PaginationQuery>,
 ) -> Result<Json<Vec<SensorData>>, StatusCode> {
-    match fetch_speed_data_today(&state.db).await {
+    let limit: u16 = u16::try_from(params.limit.unwrap_or(100).min(1000)).unwrap_or(100);
+    match fetch_speed_data_today(&state.db, limit).await {
         Ok(data) => Ok(Json(data)),
         Err(e) => {
             eprintln!("Error fetching today's speed data: {e:?}");
