@@ -30,3 +30,22 @@ pub async fn fetch_last_n_speed_data(
         .map(|row| SensorData::new(row.id, row.speed, row.created_at))
         .collect())
 }
+
+/// Fetches the rows with pagination support.
+pub async fn fetch_speed_data_with_pagination(
+    db: &PgPool,
+    offset: u32,
+    limit: u32,
+) -> Result<Vec<SensorData>, sqlx::Error> {
+    const QUERY: &str =
+        "SELECT id, speed, created_at FROM speed ORDER BY created_at DESC OFFSET $1 LIMIT $2";
+    let rows: Vec<SensorData> = sqlx::query_as::<_, SensorData>(QUERY)
+        .bind(i64::from(offset))
+        .bind(i64::from(limit))
+        .fetch_all(db)
+        .await?;
+    Ok(rows
+        .into_iter()
+        .map(|row| SensorData::new(row.id, row.speed, row.created_at))
+        .collect())
+}

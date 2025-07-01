@@ -61,10 +61,16 @@ curl -X POST http://localhost:3000/api/create-speed \
   }'
 ```
 
-### 2. Retrieve Speed Data
+### 2. Retrieve last n records of Speed Data
 
 ```bash
 curl -X GET http://localhost:3000/api/get-speed?limit=500
+```
+
+### 3. Retrieve Speed Data with Pagination
+
+```bash
+curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
 ```
 
 ## 📊 Architecture Diagram
@@ -72,7 +78,7 @@ curl -X GET http://localhost:3000/api/get-speed?limit=500
 ```mermaid
 graph TD
 ;
-    A[Sensor] -->|HTTP Request| B[Axum Server];
+    A[Arduino Sensor] -->|HTTP Request| B[Axum Server];
     B -->|Database Query| C[PostgreSQL Database];
     C -->|Response Data| B;
     B -->|HTTP Response| A;

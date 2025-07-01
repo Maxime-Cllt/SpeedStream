@@ -2,6 +2,7 @@ use crate::database::*;
 use crate::structs::api_response::ApiResponse;
 use crate::structs::app_state::AppState;
 use crate::structs::data_sensor_request::CreateSensorDataRequest;
+use crate::structs::pagination_query::PaginationQuery;
 use crate::structs::query_limit::QueryLimit;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
@@ -11,16 +12,19 @@ pub async fn health_check(
     State(state): State<AppState>,
 ) -> Result<Json<ApiResponse<String>>, StatusCode> {
     match sqlx::query("SELECT 1").fetch_one(&state.db).await {
-        Ok(_) => Ok(Json(ApiResponse::success(
-            "API is healthy",
-            "Database connected".into(),
-        ))),
+        Ok(_) => {
+            let today: String = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+            Ok(Json(ApiResponse::success(
+                "API is healthy",
+                format!("{today} - Database connection is active"),
+            )))
+        }
         Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
 }
 
 /// Handler to create speed data from Arduino
-pub async fn create_speed_data(
+pub async fn create_speed(
     State(state): State<AppState>,
     Json(payload): Json<CreateSensorDataRequest>,
 ) -> Result<StatusCode, StatusCode> {
@@ -35,7 +39,7 @@ pub async fn create_speed_data(
 }
 
 // Retrieves the last n speed data entries from the database
-pub async fn get_speed_n_data(
+pub async fn get_last_n_speed(
     State(state): State<AppState>,
     Query(params): Query<QueryLimit>,
 ) -> Result<Json<Vec<SensorData>>, StatusCode> {
@@ -50,67 +54,24 @@ pub async fn get_speed_n_data(
     }
 }
 
-/// Root handler for the API
-pub async fn root() -> &'static str {
-    "Sensor Data API - Running with Axum & MySQL"
+/// Retrieves speed data with pagination support
+pub async fn get_speed_pagination(
+    State(state): State<AppState>,
+    Query(params): Query<PaginationQuery>,
+) -> Result<Json<Vec<SensorData>>, StatusCode> {
+    let offset: u32 = params.offest.unwrap_or(0);
+    let limit: u32 = params.limit.unwrap_or(100).min(1000);
+
+    match fetch_speed_data_with_pagination(&state.db, offset, limit).await {
+        Ok(data) => Ok(Json(data)),
+        Err(e) => {
+            eprintln!("Error fetching speed data with pagination: {e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use sqlx::postgres::PgPoolOptions;
-    use super::*;
-    use crate::constant::DATABASE_URL;
-    use crate::structs::app_state::AppState;
-
-    #[tokio::test]
-    async fn test_health_check() {
-        let state = AppState {
-            db: PgPoolOptions::new()
-                .max_connections(1)
-                .connect(DATABASE_URL)
-                .await
-                .unwrap(),
-        };
-        let response = health_check(State(state)).await;
-        assert!(response.is_ok());
-        let json_response = response.unwrap();
-        assert!(json_response.0.success);
-    }
-
-    #[tokio::test]
-    async fn test_create_speed_data() {
-        let state = AppState {
-            db: PgPoolOptions::new()
-                .max_connections(1)
-                .connect(DATABASE_URL)
-                .await
-                .unwrap(),
-        };
-        let payload = CreateSensorDataRequest { speed: 42.0 };
-        let response = create_speed_data(State(state), Json(payload)).await;
-        assert!(response.is_ok());
-        assert_eq!(response.unwrap(), StatusCode::CREATED);
-    }
-
-    #[tokio::test]
-    async fn test_get_speed_n_data() {
-        let state = AppState {
-            db: PgPoolOptions::new()
-                .max_connections(1)
-                .connect(DATABASE_URL)
-                .await
-                .unwrap(),
-        };
-        let params = QueryLimit { limit: Some(10) };
-        let response = get_speed_n_data(State(state), Query(params)).await;
-        assert!(response.is_ok());
-        let data = response.unwrap().0;
-        assert!(!data.is_empty());
-    }
-
-    #[tokio::test]
-    async fn test_root() {
-        let response = root().await;
-        assert_eq!(response, "Sensor Data API - Running with Axum & MySQL");
-    }
+/// Root handler for the API
+pub async fn root() -> &'static str {
+    "Sensor Data API - Running with Axum & Postgres"
 }

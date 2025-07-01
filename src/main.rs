@@ -4,7 +4,7 @@ use axum::{
 };
 use sqlx::postgres::PgPoolOptions;
 use speed_stream::constant::DATABASE_URL;
-use speed_stream::handler::{create_speed_data, get_speed_n_data, health_check, root};
+use speed_stream::handler::{create_speed, get_last_n_speed, get_speed_pagination, health_check, root};
 use speed_stream::structs::app_state::AppState;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -25,8 +25,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .route("/", get(root))
         .route("/health", get(health_check))
-        .route("/api/create-speed", post(create_speed_data))
-        .route("/api/get-speed", get(get_speed_n_data))
+        .route("/api/create-speed", post(create_speed))
+        .route("/api/get-speed", get(get_last_n_speed))
+        .route("/api/get-speed/pagination", get(get_speed_pagination))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
