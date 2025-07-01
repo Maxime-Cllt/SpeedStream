@@ -16,7 +16,7 @@ collection and monitoring. Perfect for IoT sensors, vehicle tracking systems, an
 
 ## ✨ Key Features
 
-- ⚡ Ultra-Fast: Handles thousands of requests per second with minimal latency
+- ⚡ Ultra-Fast: Can handle thousands of requests per second with minimal latency
 - 🔒 Memory Safe: Built with Rust's zero-cost abstractions and memory safety
 - 🏗️ Production Ready: Comprehensive error handling, logging, and health checks
 - 🌐 IoT Friendly: Optimized for Arduino, Raspberry Pi, and other embedded devices
@@ -65,6 +65,17 @@ curl -X POST http://localhost:3000/api/create-speed \
 
 ```bash
 curl -X GET http://localhost:3000/api/get-speed?limit=500
+```
+
+## 📊 Architecture Diagram
+
+```mermaid
+graph TD
+;
+    A[Sensor] -->|HTTP Request| B[Axum Server];
+    B -->|Database Query| C[PostgreSQL Database];
+    C -->|Response Data| B;
+    B -->|HTTP Response| A;
 ```
 
 ## 🤝 Contributing
