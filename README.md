@@ -49,7 +49,7 @@ collection and monitoring. Perfect for IoT sensors, vehicle tracking systems, an
 - **POST /api/create-speed**: Submit new speed data into the database.
 - **GET /api/get-speed?limit=500**: Retrieve speed data with a limit on the number of records returned.
 - **GET /api/get-speed/pagination?offset=0&limit=500**: Retrieve speed data with pagination support.
-- **GET /api/get-speed/today**: Retrieve speed data for today with pagination support.
+- **GET /api/get-speed/today?limit=500**: Retrieve speed data for today with a limit on the number of records returned.
 
 ## 🧪 Example Usage
 
@@ -80,24 +80,21 @@ curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
 ```mermaid
 graph TD
 %% Nodes
-  A[Arduino Sensor]
-  B[Axum Server]
-  C[PostgreSQL Database]
-
+    A[Arduino Sensor]
+    B[Axum Server]
+    C[PostgreSQL Database]
 %% Edges
-  A -->|Sends HTTP Request| B
-  B -->|Queries Database| C
-  C -->|Returns Data| B
-  B -->|Sends HTTP Response| A
-
+    A -->|Sends HTTP Request| B
+    B -->|Queries Database| C
+    C -->|Returns Data| B
+    B -->|Sends HTTP Response| A
 %% Styles
-  classDef arduino fill:#00979D,stroke:#004d4d,stroke-width:2px,color:#fff,font-weight:bold;
-  classDef axum fill:#dea584,stroke:#b36723,stroke-width:2px,color:#000,font-weight:bold;
-  classDef postgres fill:#336791,stroke:#1f3d5d,stroke-width:2px,color:#fff,font-weight:bold;
-
-  class A arduino;
-  class B axum;
-  class C postgres;
+    classDef arduino fill: #00979D, stroke: #004d4d, stroke-width: 2px, color: #fff, font-weight: bold;
+    classDef axum fill: #dea584, stroke: #b36723, stroke-width: 2px, color: #000, font-weight: bold;
+    classDef postgres fill: #336791, stroke: #1f3d5d, stroke-width: 2px, color: #fff, font-weight: bold;
+    class A arduino;
+    class B axum;
+    class C postgres;
 ```
 
 ## 🤝 Contributing
