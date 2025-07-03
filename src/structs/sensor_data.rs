@@ -10,6 +10,7 @@ pub struct SensorData {
 }
 
 impl SensorData {
+    #[inline]
     pub const fn new(id: i32, speed: f32, created_at: DateTime<Utc>) -> Self {
         Self {
             id,
@@ -22,12 +23,12 @@ impl SensorData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::TimeZone;
+    use chrono::TimeZone as _;
 
     #[tokio::test]
     async fn test_sensor_data_creation() {
-        let id = 1;
-        let speed = 10.0;
+        let id = 1i32;
+        let speed: f32 = 10.0;
         let created_at = Utc.with_ymd_and_hms(2023, 10, 1, 12, 0, 0).unwrap();
         let sensor_data = SensorData::new(id, speed, created_at);
 

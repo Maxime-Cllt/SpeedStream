@@ -1,8 +1,9 @@
 use crate::structs::payload::create_speed_request::CreateSpeedDataRequest;
-pub use crate::structs::sensor_data::SensorData;
+use crate::structs::sensor_data::SensorData;
 use sqlx::PgPool;
 
 /// Inserts speed data into the database.
+#[inline]
 pub async fn insert_speed_data(
     db: &PgPool,
     payload: CreateSpeedDataRequest,
@@ -16,13 +17,14 @@ pub async fn insert_speed_data(
 }
 
 /// Fetches the last n speed data entries from the database.
+#[inline]
 pub async fn fetch_last_n_speed_data(
     db: &PgPool,
     number: u16,
 ) -> Result<Vec<SensorData>, sqlx::Error> {
     const QUERY: &str = "SELECT id, speed, created_at FROM speed ORDER BY id DESC LIMIT $1";
     let rows: Vec<SensorData> = sqlx::query_as::<_, SensorData>(QUERY)
-        .bind(number as i64)
+        .bind(i64::from(number))
         .fetch_all(db)
         .await?;
     Ok(rows
@@ -32,6 +34,7 @@ pub async fn fetch_last_n_speed_data(
 }
 
 /// Fetches the rows with pagination support.
+#[inline]
 pub async fn fetch_speed_data_with_pagination(
     db: &PgPool,
     offset: u32,
@@ -50,6 +53,7 @@ pub async fn fetch_speed_data_with_pagination(
 }
 
 /// Fetches all rows from inserted in the current day
+#[inline]
 pub async fn fetch_speed_data_today(
     db: &PgPool,
     limit: u16,

@@ -11,8 +11,8 @@
 
 ## 📖 Overview
 
-SpeedStream is a blazingly fast REST API built with Rust and Axum, specifically designed for real-time speed data
-collection and monitoring. Perfect for IoT sensors, vehicle tracking systems, and performance monitoring applications.
+SpeedStream is a fast REST API built with Rust and Axum, specifically designed for real-time speed data
+collection and monitoring. Perfect for vehicle tracking speed systems and performance monitoring applications.
 
 ## ✨ Key Features
 
@@ -53,7 +53,14 @@ collection and monitoring. Perfect for IoT sensors, vehicle tracking systems, an
 
 ## 🧪 Example Usage
 
-### 1. Insert Speed Data
+
+### 1. Check Health Status
+
+```bash
+curl -X GET http://localhost:3000/health
+```
+
+### 2. Insert Speed Data
 
 ```bash
 curl -X POST http://localhost:3000/api/create-speed \
@@ -63,13 +70,13 @@ curl -X POST http://localhost:3000/api/create-speed \
   }'
 ```
 
-### 2. Retrieve last n records of Speed Data
+### 3. Retrieve last n records of Speed Data
 
 ```bash
 curl -X GET http://localhost:3000/api/get-speed?limit=500
 ```
 
-### 3. Retrieve Speed Data with Pagination
+### 4. Retrieve Speed Data with Pagination
 
 ```bash
 curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500

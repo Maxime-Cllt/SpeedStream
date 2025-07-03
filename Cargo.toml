@@ -3,6 +3,12 @@ name = "SpeedStream"
 version = "1.0.0"
 edition = "2024"
 authors = ["Maxime-Cllt"]
+description = "A high-performance streaming server for real-time data processing"
+license = "GPL-3"
+repository = "https://github.com/Maxime-Cllt/SpeedStream.git"
+homepage = ""
+readme = "README.md"
+keywords = ["streaming", "server", "speed"]
 
 [dependencies]
 axum = "0.8.4"

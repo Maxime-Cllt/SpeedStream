@@ -12,17 +12,18 @@ use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {    
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Sensor API Server...");
 
     let pool = PgPoolOptions::new()
         .max_connections(10)
+        .min_connections(1)
         .connect(DATABASE_URL)
         .await?;
 
     println!("Connected to Postgres database");
 
-    let app_state = AppState { db: pool };
+    let app_state = AppState::new(pool);
 
     let app = Router::new()
         .route("/", get(root))
