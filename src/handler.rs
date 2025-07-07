@@ -6,7 +6,7 @@ use crate::structs::app_state::AppState;
 use crate::structs::parameter::pagination_query::PaginationQuery;
 use crate::structs::parameter::query_limit::QueryLimit;
 use crate::structs::payload::create_speed_request::CreateSpeedDataRequest;
-use crate::structs::sensor_data::SensorData;
+use crate::structs::speed_data::SpeedData;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
 
@@ -43,7 +43,7 @@ pub async fn create_speed(
 pub async fn get_last_n_speed(
     State(state): State<AppState>,
     Query(params): Query<QueryLimit>,
-) -> Result<Json<Vec<SensorData>>, StatusCode> {
+) -> Result<Json<Vec<SpeedData>>, StatusCode> {
     let limit: u16 = params.limit.unwrap_or(100).min(1000);
 
     match fetch_last_n_speed_data(&state.db, limit).await {
@@ -60,7 +60,7 @@ pub async fn get_last_n_speed(
 pub async fn get_speed_pagination(
     State(state): State<AppState>,
     Query(params): Query<PaginationQuery>,
-) -> Result<Json<Vec<SensorData>>, StatusCode> {
+) -> Result<Json<Vec<SpeedData>>, StatusCode> {
     let offset: u32 = params.offest.unwrap_or(0);
     let limit: u32 = params.limit.unwrap_or(100).min(1000);
 
@@ -78,7 +78,7 @@ pub async fn get_speed_pagination(
 pub async fn get_speed_today(
     State(state): State<AppState>,
     Query(params): Query<PaginationQuery>,
-) -> Result<Json<Vec<SensorData>>, StatusCode> {
+) -> Result<Json<Vec<SpeedData>>, StatusCode> {
     let limit: u16 = u16::try_from(params.limit.unwrap_or(100).min(1000)).unwrap_or(100);
     match fetch_speed_data_today(&state.db, limit).await {
         Ok(data) => Ok(Json(data)),

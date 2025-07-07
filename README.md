@@ -53,7 +53,6 @@ collection and monitoring. Perfect for vehicle tracking speed systems and perfor
 
 ## 🧪 Example Usage
 
-
 ### 1. Check Health Status
 
 ```bash
@@ -66,7 +65,8 @@ curl -X GET http://localhost:3000/health
 curl -X POST http://localhost:3000/api/create-speed \
   -H "Content-Type: application/json" \
   -d '{
-    "speed":145
+    "speed":145,
+    "timestamp": 1700000000, 
   }'
 ```
 

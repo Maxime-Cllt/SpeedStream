@@ -4,10 +4,10 @@
 -- Connect to the speedstream_db database
 \c speedstream_db;
 
--- Create the speed table
-CREATE TABLE speed
+-- Create the SPEED table
+CREATE TABLE SPEED
 (
-    id         SERIAL PRIMARY KEY,
-    speed      FLOAT4 NOT NULL,
+    ID         SERIAL PRIMARY KEY,
+    SPEED      FLOAT4 NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

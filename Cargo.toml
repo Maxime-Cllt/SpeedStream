@@ -8,7 +8,7 @@ license = "GPL-3"
 repository = "https://github.com/Maxime-Cllt/SpeedStream.git"
 homepage = ""
 readme = "README.md"
-keywords = ["streaming", "server", "speed"]
+keywords = ["streaming", "server", "SPEED"]
 
 [dependencies]
 axum = "0.8.4"

@@ -1,5 +1,6 @@
 use crate::structs::payload::create_speed_request::CreateSpeedDataRequest;
-use crate::structs::sensor_data::SensorData;
+use crate::structs::speed_data::SpeedData;
+use chrono::{DateTime, MappedLocalTime, TimeZone, Utc};
 use sqlx::PgPool;
 
 /// Inserts speed data into the database.
@@ -8,9 +9,17 @@ pub async fn insert_speed_data(
     db: &PgPool,
     payload: CreateSpeedDataRequest,
 ) -> Result<bool, sqlx::Error> {
-    const QUERY_INSERT: &str = "INSERT INTO speed (speed) VALUES ($1)";
+    const QUERY_INSERT: &str = "INSERT INTO speed (speed, created_at) VALUES ($1, $2)";
+
+    // Convert the timestamp from milliseconds to a DateTime<Utc>
+    let date: DateTime<Utc> = match Utc.timestamp_millis_opt(payload.timestamp as i64) {
+        MappedLocalTime::Single(dt) => dt,
+        _ => Utc::now(),
+    };
+
     sqlx::query(QUERY_INSERT)
         .bind(payload.speed)
+        .bind(date)
         .execute(db)
         .await
         .map(|_| true)
@@ -21,15 +30,15 @@ pub async fn insert_speed_data(
 pub async fn fetch_last_n_speed_data(
     db: &PgPool,
     number: u16,
-) -> Result<Vec<SensorData>, sqlx::Error> {
+) -> Result<Vec<SpeedData>, sqlx::Error> {
     const QUERY: &str = "SELECT id, speed, created_at FROM speed ORDER BY id DESC LIMIT $1";
-    let rows: Vec<SensorData> = sqlx::query_as::<_, SensorData>(QUERY)
+    let rows: Vec<SpeedData> = sqlx::query_as::<_, SpeedData>(QUERY)
         .bind(i64::from(number))
         .fetch_all(db)
         .await?;
     Ok(rows
         .into_iter()
-        .map(|row| SensorData::new(row.id, row.speed, row.created_at))
+        .map(|row| SpeedData::new(row.id, row.speed, row.created_at))
         .collect())
 }
 
@@ -39,16 +48,16 @@ pub async fn fetch_speed_data_with_pagination(
     db: &PgPool,
     offset: u32,
     limit: u32,
-) -> Result<Vec<SensorData>, sqlx::Error> {
+) -> Result<Vec<SpeedData>, sqlx::Error> {
     const QUERY: &str = "SELECT id, speed, created_at FROM speed OFFSET $1 LIMIT $2";
-    let rows: Vec<SensorData> = sqlx::query_as::<_, SensorData>(QUERY)
+    let rows: Vec<SpeedData> = sqlx::query_as::<_, SpeedData>(QUERY)
         .bind(i64::from(offset))
         .bind(i64::from(limit))
         .fetch_all(db)
         .await?;
     Ok(rows
         .into_iter()
-        .map(|row| SensorData::new(row.id, row.speed, row.created_at))
+        .map(|row| SpeedData::new(row.id, row.speed, row.created_at))
         .collect())
 }
 
@@ -57,15 +66,15 @@ pub async fn fetch_speed_data_with_pagination(
 pub async fn fetch_speed_data_today(
     db: &PgPool,
     limit: u16,
-) -> Result<Vec<SensorData>, sqlx::Error> {
+) -> Result<Vec<SpeedData>, sqlx::Error> {
     const QUERY: &str =
         "SELECT id, speed, created_at FROM speed WHERE created_at >= CURRENT_DATE LIMIT $1";
-    let rows: Vec<SensorData> = sqlx::query_as::<_, SensorData>(QUERY)
+    let rows: Vec<SpeedData> = sqlx::query_as::<_, SpeedData>(QUERY)
         .bind(i64::from(limit))
         .fetch_all(db)
         .await?;
     Ok(rows
         .into_iter()
-        .map(|row| SensorData::new(row.id, row.speed, row.created_at))
+        .map(|row| SpeedData::new(row.id, row.speed, row.created_at))
         .collect())
 }
