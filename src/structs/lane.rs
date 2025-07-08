@@ -7,13 +7,14 @@ use sqlx::{error::BoxDynError, Decode, Postgres};
 /// /// The `Lane` enum has two variants:
 /// /// - `Left`: Represents the left lane. (0)
 /// /// - `Right`: Represents the right lane. (1)
-#[derive(Debug, PartialEq, Serialize, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(u8)]
 pub enum Lane {
     Left = 0,
     Right = 1,
 }
 
+/// Implementing the `Deserialize` trait for `Lane` to allow it to be deserialized from JSON or other formats.
 impl<'de> Deserialize<'de> for Lane {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -25,6 +26,20 @@ impl<'de> Deserialize<'de> for Lane {
             1 => Ok(Lane::Right),
             _ => Err(serde::de::Error::custom("Invalid lane value")),
         }
+    }
+}
+
+/// Implementing the `Serialize` trait for `Lane` to allow it to be serialized to JSON or other formats.
+impl Serialize for Lane {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let value = match self {
+            Lane::Left => 0_u8,
+            Lane::Right => 1_u8,
+        };
+        serializer.serialize_u8(value)
     }
 }
 
