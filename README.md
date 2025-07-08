@@ -66,6 +66,7 @@ curl -X POST http://localhost:3000/api/create-speed \
   -H "Content-Type: application/json" \
   -d '{
     "speed":145,
+    "lane": 0,
     "timestamp": 1700000000, 
   }'
 ```
