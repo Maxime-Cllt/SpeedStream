@@ -5,9 +5,10 @@
 \c speedstream_db;
 
 -- Create the SPEED table
-CREATE TABLE SPEED
+CREATE TABLE speed
 (
     ID         SERIAL PRIMARY KEY,
-    SPEED      FLOAT4 NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    speed      FLOAT4      DEFAULT 0.0               NOT NULL, -- Speed in km/h
+    lane       INT4        DEFAULT 0                 NOT NULL, -- Lane (left, right, etc.)
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL  -- Timestamp of the speed record
 );
