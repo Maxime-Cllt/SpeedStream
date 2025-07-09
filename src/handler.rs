@@ -1,6 +1,6 @@
 use crate::database::{
-    fetch_last_n_speed_data, fetch_speed_data_today, fetch_speed_data_with_pagination,
-    insert_speed_data,
+    fetch_last_n_speed_data, fetch_last_speed, fetch_speed_data_today,
+    fetch_speed_data_with_pagination, insert_speed_data,
 };
 use crate::structs::app_state::AppState;
 use crate::structs::parameter::pagination_query::PaginationQuery;
@@ -84,6 +84,18 @@ pub async fn get_speed_today(
         Ok(data) => Ok(Json(data)),
         Err(e) => {
             println!("Error fetching today's speed data: {e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Retrieves the last speed data entry
+#[inline]
+pub async fn get_last_speed(State(state): State<AppState>) -> Result<Json<SpeedData>, StatusCode> {
+    match fetch_last_speed(&state.db).await {
+        Ok(data) => Ok(Json(data)),
+        Err(e) => {
+            println!("Error fetching last speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

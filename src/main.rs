@@ -3,9 +3,7 @@ use axum::{
     Router,
 };
 use speed_stream::constant::DATABASE_URL;
-use speed_stream::handler::{
-    create_speed, get_last_n_speed, get_speed_pagination, get_speed_today, health_check, root,
-};
+use speed_stream::handler::{create_speed, get_last_n_speed, get_last_speed, get_speed_pagination, get_speed_today, health_check, root};
 use speed_stream::structs::app_state::AppState;
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
@@ -32,6 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/get-speed", get(get_last_n_speed))
         .route("/api/get-speed/pagination", get(get_speed_pagination))
         .route("/api/get-speed/today", get(get_speed_today))
+        .route("/api/get-speed/last", get(get_last_speed))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);

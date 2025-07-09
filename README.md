@@ -83,6 +83,12 @@ curl -X GET http://localhost:3000/api/get-speed?limit=500
 curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
 ```
 
+### 5. Retrieve the last speed
+
+```bash
+curl -X GET http://localhost:3000/api/get-speed/get_last_speed
+```
+
 ## 📊 Architecture Diagram
 
 ```mermaid

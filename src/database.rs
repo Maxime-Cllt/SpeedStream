@@ -79,3 +79,10 @@ pub async fn fetch_speed_data_today(
         .map(|row| SpeedData::new(row.id, row.speed, row.lane, row.created_at))
         .collect())
 }
+
+#[inline]
+pub async fn fetch_last_speed(db: &PgPool) -> Result<SpeedData, sqlx::Error> {
+    const QUERY: &str = "SELECT id,speed,lane,created_at FROM speed ORDER BY id DESC";
+    let row: SpeedData = sqlx::query_as::<_, SpeedData>(QUERY).fetch_one(db).await?;
+    Ok(SpeedData::new(row.id, row.speed, row.lane, row.created_at))
+}
