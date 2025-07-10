@@ -7,8 +7,11 @@ pub struct AppState {
 }
 
 impl AppState {
+
+    /// Creates a new instance of `AppState` with the provided database connection pool.
     #[inline]
+    #[must_use]
     pub const fn new(db: PgPool) -> Self {
-        AppState { db }
+        Self { db }
     }
 }

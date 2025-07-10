@@ -7,7 +7,7 @@ use sqlx::{error::BoxDynError, Decode, Postgres};
 /// /// The `Lane` enum has two variants:
 /// /// - `Left`: Represents the left lane. (0)
 /// /// - `Right`: Represents the right lane. (1)
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq)]
 #[repr(u8)]
 pub enum Lane {
     Left = 0,
@@ -22,8 +22,8 @@ impl<'de> Deserialize<'de> for Lane {
     {
         let value: u8 = Deserialize::deserialize(deserializer)?;
         match value {
-            0 => Ok(Lane::Left),
-            1 => Ok(Lane::Right),
+            0 => Ok(Self::Left),
+            1 => Ok(Self::Right),
             _ => Err(serde::de::Error::custom("Invalid lane value")),
         }
     }
@@ -36,22 +36,22 @@ impl Serialize for Lane {
         S: serde::Serializer,
     {
         let value = match self {
-            Lane::Left => 0_u8,
-            Lane::Right => 1_u8,
+            Self::Left => 0_u8,
+            Self::Right => 1_u8,
         };
         serializer.serialize_u8(value)
     }
 }
 
-/// Implementing the `Decode` trait for `Lane` to allow it to be decoded from a PostgreSQL value.
+/// Implementing the `Decode` trait for `Lane` to allow it to be decoded from a `PostgreSQL` value.
 impl<'r> Decode<'r, Postgres> for Lane {
     fn decode(value: PgValueRef<'r>) -> Result<Self, BoxDynError> {
         let v = <i32 as Decode<Postgres>>::decode(value)?;
-        Lane::try_from(v).map_err(|_| "invalid value for Lane".into())
+        Self::try_from(v).map_err(|_| "invalid value for Lane".into())
     }
 }
 
-/// Implementing the `Type` trait for `Lane` to specify its PostgreSQL type information.
+/// Implementing the `Type` trait for `Lane` to specify its `PostgreSQL` type information.
 impl Type<Postgres> for Lane {
     fn type_info() -> PgTypeInfo {
         <i32 as Type<Postgres>>::type_info()
@@ -64,8 +64,8 @@ impl TryFrom<i32> for Lane {
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(Lane::Left),
-            1 => Ok(Lane::Right),
+            0 => Ok(Self::Left),
+            1 => Ok(Self::Right),
             _ => Err("Invalid value for Lane"),
         }
     }
@@ -91,5 +91,23 @@ mod tests {
         assert_eq!(Lane::try_from(0_i32), Ok(Lane::Left));
         assert_eq!(Lane::try_from(1_i32), Ok(Lane::Right));
         assert_eq!(Lane::try_from(2_i32), Err("Invalid value for Lane"));
+    }
+
+    #[tokio::test]
+    async fn test_lane_serialization() {
+        let left = Lane::Left;
+        let right = Lane::Right;
+
+        let left_json = serde_json::to_string(&left).unwrap();
+        let right_json = serde_json::to_string(&right).unwrap();
+
+        assert_eq!(left_json, "0");
+        assert_eq!(right_json, "1");
+
+        let deserialized_left: Lane = serde_json::from_str(&left_json).unwrap();
+        let deserialized_right: Lane = serde_json::from_str(&right_json).unwrap();
+
+        assert_eq!(deserialized_left, Lane::Left);
+        assert_eq!(deserialized_right, Lane::Right);
     }
 }

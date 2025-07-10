@@ -7,13 +7,15 @@ use sqlx::FromRow;
 #[non_exhaustive]
 pub struct SpeedData {
     pub id: i32,
-    pub speed: f32,
-    pub lane: Lane,
-    pub created_at: DateTime<Utc>,
+    pub speed: f32,                // Represents the speed of the vehicle in km/h
+    pub lane: Lane,                // Represents the lane of the vehicle (Left or Right)
+    pub created_at: DateTime<Utc>, // Timestamp when the speed data was created
 }
 
 impl SpeedData {
+    /// Creates a new instance of `SpeedData`.
     #[inline]
+    #[must_use]
     pub const fn new(id: i32, speed: f32, lane: Lane, created_at: DateTime<Utc>) -> Self {
         Self {
             id,
