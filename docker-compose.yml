@@ -24,7 +24,9 @@ services:
 
   # Rust API Application
   api:
-    image: maxcllt/speedstream-api:1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: speedstream-api
     restart: unless-stopped
     ports:
