@@ -50,6 +50,7 @@ collection and monitoring. Perfect for vehicle tracking speed systems and perfor
 - **GET /api/get-speed?limit=500**: Retrieve speed data with a limit on the number of records returned.
 - **GET /api/get-speed/pagination?offset=0&limit=500**: Retrieve speed data with pagination support.
 - **GET /api/get-speed/today?limit=500**: Retrieve speed data for today with a limit on the number of records returned.
+- **GET /api/get-speed/last**: Retrieve the last recorded speed data.
 
 ## 🧪 Example Usage
 
@@ -86,7 +87,7 @@ curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
 ### 5. Retrieve the last speed
 
 ```bash
-curl -X GET http://localhost:3000/api/get-speed/get_last_speed
+curl -X GET http://localhost:3000/api/get-speed/last
 ```
 
 ## 📊 Architecture Diagram
