@@ -1,6 +1,5 @@
 use crate::structs::payload::create_speed_request::CreateSpeedDataRequest;
 use crate::structs::speed_data::SpeedData;
-use chrono::{DateTime, MappedLocalTime, TimeZone, Utc};
 use sqlx::PgPool;
 
 /// Inserts speed data into the database.

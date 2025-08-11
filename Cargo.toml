@@ -12,7 +12,7 @@ keywords = ["streaming", "server", "SPEED"]
 
 [dependencies]
 axum = "0.8.4"
-tokio = { version = "1.45.1", features = ["full"] }
+tokio = { version = "1.47.1", features = ["full"] }
 serde = { version = "1.0.219", features = ["derive"] }
 sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio-rustls", "chrono"] }
 tower-http = { version = "0.6.6", features = ["cors", "trace"] }
