@@ -9,18 +9,12 @@ pub async fn insert_speed_data(
     db: &PgPool,
     payload: CreateSpeedDataRequest,
 ) -> Result<bool, sqlx::Error> {
-    const QUERY_INSERT: &str = "INSERT INTO speed (speed,lane,created_at) VALUES ($1, $2, $3)";
+    const QUERY_INSERT: &str = "INSERT INTO speed (speed,lane) VALUES ($1, $2)";
 
-    // Convert the timestamp from milliseconds to a DateTime<Utc>
-    let date: DateTime<Utc> = match Utc.timestamp_millis_opt(payload.timestamp as i64) {
-        MappedLocalTime::Single(dt) => dt,
-        _ => Utc::now(),
-    };
 
     sqlx::query(QUERY_INSERT)
         .bind(payload.speed)
         .bind(i32::from(payload.lane))
-        .bind(date)
         .execute(db)
         .await
         .map(|_| true)

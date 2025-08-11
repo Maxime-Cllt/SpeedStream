@@ -67,8 +67,7 @@ curl -X POST http://localhost:3000/api/create-speed \
   -H "Content-Type: application/json" \
   -d '{
     "speed":145,
-    "lane": 0,
-    "timestamp": 1700000000, 
+    "lane": 0
   }'
 ```
 
@@ -88,6 +87,12 @@ curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
 
 ```bash
 curl -X GET http://localhost:3000/api/get-speed/last
+```
+
+### 6. Retrieve Speed Data for Today
+
+```bash
+curl -X GET http://localhost:3000/api/get-speed/today
 ```
 
 ## 📊 Architecture Diagram
@@ -112,6 +117,15 @@ graph TD
     class C postgres;
 ```
 
+## 🛠 Code quality
+
+### Unit Tests available
+
+- **Run Tests**:
+  ```bash
+  cargo test
+  ```
+  
 ## 🤝 Contributing
 
 Contributions are welcome! To contribute:
