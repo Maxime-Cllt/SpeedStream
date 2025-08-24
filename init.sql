@@ -2,8 +2,7 @@
 -- This runs when PostgreSQL container starts for the first time
 
 -- Connect to the speedstream_db database
-\c
-speedstream_db;
+\c speedstream_db;
 
 -- Create the SPEED table
 CREATE TABLE speed

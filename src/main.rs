@@ -3,8 +3,13 @@ use axum::{
     Router,
 };
 use speed_stream::constant::DATABASE_URL;
-use speed_stream::handler::{create_speed, get_last_n_speed, get_last_speed, get_speed_pagination, get_speed_today, health_check, root};
+use speed_stream::handler::{
+    create_speed, get_last_n_speed, get_last_speed, get_speed_pagination, get_speed_today,
+    health_check, root,
+};
 use speed_stream::structs::app_state::AppState;
+use speed_stream::structs::logger::Logger;
+use speed_stream::traits::log_level::LogLevel;
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -12,6 +17,9 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Sensor API Server...");
+
+    // Create a logger that writes to "app.log" with minimum level of Info
+    Logger::init("app.log", LogLevel::Trace)?;
 
     let pool = PgPoolOptions::new()
         .max_connections(10)
