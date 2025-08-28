@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Exit on any error
+set -e
+
+source ../.env
+
+# Set variables for version and image name
+VERSION="1.0"
+IMAGE_NAME="speedstream-api"
+
+echo "Log in to Docker Hub..."
+docker login
+
+echo "Building Docker image..."
+docker build -t $IMAGE_NAME:$VERSION ../
+
+echo "Tagging Docker image..."
+docker tag $IMAGE_NAME:$VERSION $DOCKER_LOGIN_USERNAME/$IMAGE_NAME:$VERSION
+
+echo "Pushing Docker image to Docker Hub..."
+docker push $DOCKER_LOGIN_USERNAME/$IMAGE_NAME:$VERSION
