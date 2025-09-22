@@ -2,23 +2,49 @@ name: Rust CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" , "master"]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE*'
+      - '.gitignore'
+      - '.github/dependabot.yml'
+      - 'images/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main" , "master"]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE*'
+      - '.gitignore'
+      - '.github/dependabot.yml'
+      - 'assets/**'
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
-  build:
-
+  check:
+    name: Check, Build and Test
     runs-on: windows-latest
-
     steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --verbose
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          # Cache key based on Cargo.lock and source files
+          key: ${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+
+      - name: Build project
+        run: cargo build --workspace --verbose
 
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --all-features --workspace --verbose

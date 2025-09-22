@@ -1,9 +1,9 @@
+use crate::traits::log_level::LogLevel;
+use chrono::Utc;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
-use chrono::{ Utc};
-use crate::traits::log_level::LogLevel;
 
 /// Internal logger structure
 struct InternalLogger {
@@ -31,7 +31,7 @@ impl InternalLogger {
         }
 
         let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S%.3f UTC");
-        let log_entry = format!("[{}] {} - {}\n", timestamp, level.as_str(), message);
+        let log_entry = format!("[{timestamp}] {} - {message}\n", level.as_str());
 
         let mut file = self.file.lock().unwrap();
         file.write_all(log_entry.as_bytes())?;
@@ -63,7 +63,9 @@ impl Logger {
 
     /// Get the global logger instance (panics if not initialized)
     fn get_logger() -> &'static InternalLogger {
-        LOGGER.get().expect("Logger not initialized. Call Logger::init() first.")
+        LOGGER
+            .get()
+            .expect("Logger not initialized. Call Logger::init() first.")
     }
 
     /// Log a message with the specified level
@@ -103,15 +105,21 @@ impl Logger {
 
     /// Log an error with context information
     pub fn error_with_context(error: &dyn std::error::Error, context: &str) -> io::Result<()> {
-        let message = format!("{}: {} (caused by: {})", context, error,
-                              error.source().map_or("unknown".to_string(), |e| e.to_string()));
+        let message = format!(
+            "{}: {} (caused by: {})",
+            context,
+            error,
+            error
+                .source()
+                .map_or("unknown".to_string(), |e| e.to_string())
+        );
         Self::error(&message)
     }
 
     /// Log the result of an operation, logging errors if they occur
     pub fn log_result<T, E>(result: &Result<T, E>, operation: &str) -> io::Result<()>
     where
-        E: std::error::Error
+        E: std::error::Error,
     {
         match result {
             Ok(_) => Self::info(&format!("Operation '{}' completed successfully", operation)),
@@ -183,13 +191,4 @@ macro_rules! log_fatal {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use std::io::Read;
-
-    
 }

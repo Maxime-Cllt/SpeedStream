@@ -9,9 +9,11 @@ pub async fn insert_speed_data(
     db: &PgPool,
     payload: CreateSpeedDataRequest,
 ) -> Result<bool, sqlx::Error> {
-    const QUERY_INSERT: &str = "INSERT INTO speed (speed,lane) VALUES ($1, $2)";
+    const QUERY_INSERT: &str =
+        "INSERT INTO speed (sensor_name,speed,lane) VALUES (NULLIF($1, ''), $2, $3)";
 
     sqlx::query(QUERY_INSERT)
+        .bind(payload.sensor_name.unwrap_or_default())
         .bind(payload.speed)
         .bind(i32::from(payload.lane))
         .execute(db)
@@ -29,7 +31,8 @@ pub async fn fetch_last_n_speed_data(
     db: &PgPool,
     number: u16,
 ) -> Result<Vec<SpeedData>, sqlx::Error> {
-    const QUERY: &str = "SELECT id,speed,lane,created_at FROM speed ORDER BY id DESC LIMIT $1";
+    const QUERY: &str =
+        "SELECT id,sensor_name,speed,lane,created_at FROM speed ORDER BY id DESC LIMIT $1";
     let rows: Vec<SpeedData> = sqlx::query_as::<_, SpeedData>(QUERY)
         .bind(i64::from(number))
         .fetch_all(db)
@@ -40,7 +43,7 @@ pub async fn fetch_last_n_speed_data(
         })?;
     Ok(rows
         .into_iter()
-        .map(|row| SpeedData::new(row.id, row.speed, row.lane, row.created_at))
+        .map(|row| SpeedData::new(row.id, row.sensor_name, row.speed, row.lane, row.created_at))
         .collect())
 }
 
@@ -51,7 +54,7 @@ pub async fn fetch_speed_data_with_pagination(
     offset: u32,
     limit: u32,
 ) -> Result<Vec<SpeedData>, sqlx::Error> {
-    const QUERY: &str = "SELECT id,speed,lane,created_at FROM speed OFFSET $1 LIMIT $2";
+    const QUERY: &str = "SELECT id,sensor_name,speed,lane,created_at FROM speed OFFSET $1 LIMIT $2";
     let rows: Vec<SpeedData> = sqlx::query_as::<_, SpeedData>(QUERY)
         .bind(i64::from(offset))
         .bind(i64::from(limit))
@@ -63,7 +66,7 @@ pub async fn fetch_speed_data_with_pagination(
         })?;
     Ok(rows
         .into_iter()
-        .map(|row| SpeedData::new(row.id, row.speed, row.lane, row.created_at))
+        .map(|row| SpeedData::new(row.id, row.sensor_name, row.speed, row.lane, row.created_at))
         .collect())
 }
 
@@ -73,8 +76,7 @@ pub async fn fetch_speed_data_today(
     db: &PgPool,
     limit: u16,
 ) -> Result<Vec<SpeedData>, sqlx::Error> {
-    const QUERY: &str =
-        "SELECT id,speed,lane,created_at FROM speed WHERE created_at >= CURRENT_DATE LIMIT $1";
+    const QUERY: &str = "SELECT id,sensor_name,speed,lane,created_at FROM speed WHERE created_at >= CURRENT_DATE LIMIT $1";
     let rows: Vec<SpeedData> = sqlx::query_as::<_, SpeedData>(QUERY)
         .bind(i64::from(limit))
         .fetch_all(db)
@@ -86,13 +88,13 @@ pub async fn fetch_speed_data_today(
 
     Ok(rows
         .into_iter()
-        .map(|row| SpeedData::new(row.id, row.speed, row.lane, row.created_at))
+        .map(|row| SpeedData::new(row.id, row.sensor_name, row.speed, row.lane, row.created_at))
         .collect())
 }
 
 #[inline]
 pub async fn fetch_last_speed(db: &PgPool) -> Result<SpeedData, sqlx::Error> {
-    const QUERY: &str = "SELECT id,speed,lane,created_at FROM speed ORDER BY id DESC";
+    const QUERY: &str = "SELECT id,sensor_name,speed,lane,created_at FROM speed ORDER BY id DESC";
     let row: SpeedData = sqlx::query_as::<_, SpeedData>(QUERY)
         .fetch_one(db)
         .await
@@ -100,5 +102,11 @@ pub async fn fetch_last_speed(db: &PgPool) -> Result<SpeedData, sqlx::Error> {
             log_error!("Failed to fetch last speed data: {e}");
             e
         })?;
-    Ok(SpeedData::new(row.id, row.speed, row.lane, row.created_at))
+    Ok(SpeedData::new(
+        row.id,
+        row.sensor_name,
+        row.speed,
+        row.lane,
+        row.created_at,
+    ))
 }

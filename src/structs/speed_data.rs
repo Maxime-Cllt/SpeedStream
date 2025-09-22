@@ -3,22 +3,31 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
+/// Represents speed data collected from a sensor on track
 #[derive(Debug, Deserialize, Serialize, FromRow)]
 #[non_exhaustive]
+#[must_use]
 pub struct SpeedData {
     pub id: i32,
-    pub speed: f32,                // Represents the speed of the vehicle in km/h
-    pub lane: Lane,                // Represents the lane of the vehicle (Left or Right)
-    pub created_at: DateTime<Utc>, // Timestamp when the speed data was created
+    pub sensor_name: Option<String>, // Optional name of the sensor
+    pub speed: f32,                  // Represents the speed of the vehicle in km/h
+    pub lane: Lane,                  // Represents the lane of the vehicle (Left or Right)
+    pub created_at: DateTime<Utc>,   // Timestamp when the speed data was created
 }
 
 impl SpeedData {
     /// Creates a new instance of `SpeedData`.
     #[inline]
-    #[must_use]
-    pub const fn new(id: i32, speed: f32, lane: Lane, created_at: DateTime<Utc>) -> Self {
-        Self {
+    pub fn new(
+        id: i32,
+        sensor_name: Option<String>,
+        speed: f32,
+        lane: Lane,
+        created_at: DateTime<Utc>,
+    ) -> Self {
+        SpeedData {
             id,
+            sensor_name,
             speed,
             lane,
             created_at,
@@ -36,9 +45,16 @@ mod tests {
         const ID: i32 = 1i32;
         const SPEED: f32 = 10.0;
         let created_at = Utc.with_ymd_and_hms(2023, 10, 1, 12, 0, 0).unwrap();
-        let sensor_data = SpeedData::new(ID, SPEED, Lane::Left, created_at);
+        let sensor_data = SpeedData::new(
+            ID,
+            Some("Sensor A".to_string()),
+            SPEED,
+            Lane::Left,
+            created_at,
+        );
 
         assert_eq!(sensor_data.id, ID);
+        assert_eq!(sensor_data.sensor_name.as_deref(), Some("Sensor A"));
         assert_eq!(sensor_data.speed, SPEED);
         assert_eq!(sensor_data.lane, Lane::Left);
         assert_eq!(sensor_data.created_at, created_at);
