@@ -102,40 +102,6 @@ impl Logger {
     pub fn fatal(message: &str) -> io::Result<()> {
         Self::log(LogLevel::Fatal, message)
     }
-
-    /// Log an error with context information
-    pub fn error_with_context(error: &dyn std::error::Error, context: &str) -> io::Result<()> {
-        let message = format!(
-            "{}: {} (caused by: {})",
-            context,
-            error,
-            error
-                .source()
-                .map_or("unknown".to_string(), |e| e.to_string())
-        );
-        Self::error(&message)
-    }
-
-    /// Log the result of an operation, logging errors if they occur
-    pub fn log_result<T, E>(result: &Result<T, E>, operation: &str) -> io::Result<()>
-    where
-        E: std::error::Error,
-    {
-        match result {
-            Ok(_) => Self::info(&format!("Operation '{}' completed successfully", operation)),
-            Err(e) => Self::error_with_context(e, &format!("Operation '{}' failed", operation)),
-        }
-    }
-
-    /// Change the minimum log level
-    pub fn set_min_level(level: LogLevel) {
-        Self::get_logger().set_min_level(level);
-    }
-
-    /// Check if the logger is initialized
-    pub fn is_initialized() -> bool {
-        LOGGER.get().is_some()
-    }
 }
 
 /// Convenience macros for easier logging with format strings

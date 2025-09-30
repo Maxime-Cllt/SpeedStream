@@ -5,9 +5,8 @@ set -e
 
 source ../.env
 
-# Set variables for version and image name
+# Set variables for versioning
 VERSION="1.0"
-IMAGE_NAME="speedstream-api"
 
 echo "Log in to Docker Hub..."
 docker login

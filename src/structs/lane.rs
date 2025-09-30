@@ -35,7 +35,7 @@ impl Serialize for Lane {
     where
         S: serde::Serializer,
     {
-        let value = match self {
+        let value:u8 = match self {
             Self::Left => 0_u8,
             Self::Right => 1_u8,
         };
