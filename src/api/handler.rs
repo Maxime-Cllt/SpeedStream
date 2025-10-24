@@ -1,7 +1,7 @@
 
 use crate::core::app_state::AppState;
-use crate::api::parameter::pagination_query::PaginationQuery;
-use crate::api::parameter::query_limit::QueryLimit;
+use crate::api::query::pagination_query::PaginationQuery;
+use crate::api::query::query_limit::QueryLimit;
 use crate::api::payload::create_speed_request::CreateSpeedDataRequest;
 use crate::core::speed_data::SpeedData;
 use axum::extract::Query;

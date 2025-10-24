@@ -1,4 +1,4 @@
-use crate::tracing::log_level::LogLevel;
+use crate::telemetry::tracing::log_level::LogLevel;
 use chrono::Utc;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -103,7 +103,7 @@ impl Logger {
 #[macro_export]
 macro_rules! log_error {
     ($($arg:tt)*) => {
-        $crate::tracing::logger::Logger::error(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::telemetry::tracing::logger::Logger::error(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -112,7 +112,7 @@ macro_rules! log_error {
 #[macro_export]
 macro_rules! log_info {
     ($($arg:tt)*) => {
-        $crate::tracing::logger::Logger::info(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::telemetry::tracing::logger::Logger::info(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -121,7 +121,7 @@ macro_rules! log_info {
 #[macro_export]
 macro_rules! log_warn {
     ($($arg:tt)*) => {
-        $crate::tracing::logger::Logger::warn(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::telemetry::tracing::logger::Logger::warn(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -130,7 +130,7 @@ macro_rules! log_warn {
 #[macro_export]
 macro_rules! log_debug {
     ($($arg:tt)*) => {
-        $crate::tracing::logger::Logger::debug(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::telemetry::tracing::logger::Logger::debug(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
