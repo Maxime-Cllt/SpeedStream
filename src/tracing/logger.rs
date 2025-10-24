@@ -1,4 +1,4 @@
-use crate::traits::log_level::LogLevel;
+use crate::tracing::log_level::LogLevel;
 use chrono::Utc;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -37,11 +37,6 @@ impl InternalLogger {
         file.write_all(log_entry.as_bytes())?;
         file.flush()?;
         Ok(())
-    }
-
-    fn set_min_level(&self, level: LogLevel) {
-        let mut min_level = self.min_level.lock().unwrap();
-        *min_level = level;
     }
 }
 
@@ -108,7 +103,7 @@ impl Logger {
 #[macro_export]
 macro_rules! log_error {
     ($($arg:tt)*) => {
-        $crate::structs::logger::Logger::error(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::tracing::logger::Logger::error(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -117,7 +112,7 @@ macro_rules! log_error {
 #[macro_export]
 macro_rules! log_info {
     ($($arg:tt)*) => {
-        $crate::structs::logger::Logger::info(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::tracing::logger::Logger::info(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -126,7 +121,7 @@ macro_rules! log_info {
 #[macro_export]
 macro_rules! log_warn {
     ($($arg:tt)*) => {
-        $crate::structs::logger::Logger::warn(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::tracing::logger::Logger::warn(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -135,7 +130,7 @@ macro_rules! log_warn {
 #[macro_export]
 macro_rules! log_debug {
     ($($arg:tt)*) => {
-        $crate::structs::logger::Logger::debug(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::tracing::logger::Logger::debug(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -144,7 +139,7 @@ macro_rules! log_debug {
 #[macro_export]
 macro_rules! log_trace {
     ($($arg:tt)*) => {
-        $crate::structs::logger::Logger::trace(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::tracing::logger::Logger::trace(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -153,7 +148,7 @@ macro_rules! log_trace {
 #[macro_export]
 macro_rules! log_fatal {
     ($($arg:tt)*) => {
-        $crate::structs::logger::Logger::fatal(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::tracing::logger::Logger::fatal(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };

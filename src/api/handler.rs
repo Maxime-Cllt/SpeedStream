@@ -1,14 +1,12 @@
-use crate::database::{
-    fetch_last_n_speed_data, fetch_last_speed, fetch_speed_data_today,
-    fetch_speed_data_with_pagination, insert_speed_data,
-};
-use crate::structs::app_state::AppState;
-use crate::structs::parameter::pagination_query::PaginationQuery;
-use crate::structs::parameter::query_limit::QueryLimit;
-use crate::structs::payload::create_speed_request::CreateSpeedDataRequest;
-use crate::structs::speed_data::SpeedData;
+
+use crate::core::app_state::AppState;
+use crate::api::parameter::pagination_query::PaginationQuery;
+use crate::api::parameter::query_limit::QueryLimit;
+use crate::api::payload::create_speed_request::CreateSpeedDataRequest;
+use crate::core::speed_data::SpeedData;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
+use crate::database::crud::*;
 
 /// Handler functions for the API
 #[inline]

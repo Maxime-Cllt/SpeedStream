@@ -1,6 +1,6 @@
 use crate::log_error;
-use crate::structs::payload::create_speed_request::CreateSpeedDataRequest;
-use crate::structs::speed_data::SpeedData;
+use crate::api::payload::create_speed_request::CreateSpeedDataRequest;
+use crate::core::speed_data::SpeedData;
 use sqlx::PgPool;
 
 /// Inserts speed data into the database.

@@ -1,4 +1,4 @@
-use crate::structs::lane::Lane;
+use crate::core::lane::Lane;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
