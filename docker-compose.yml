@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     container_name: speedstream-postgres
     restart: unless-stopped
     environment:
@@ -26,9 +24,7 @@ services:
 
   # Rust API Application
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: maxcllt/speedstream-api:1.0
     container_name: speedstream-api
     restart: unless-stopped
     ports:

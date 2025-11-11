@@ -11,8 +11,8 @@
 
 ## 📖 Overview
 
-SpeedStream is a blazingly fast REST API built with Rust and Axum, specifically designed for real-time speed data
-collection and monitoring. Perfect for IoT sensors, vehicle tracking systems, and performance monitoring applications.
+SpeedStream is a fast REST API built with Rust and Axum, specifically designed for real-time speed data
+collection and monitoring. Perfect for vehicle tracking speed systems and performance monitoring applications.
 
 ## ✨ Key Features
 
@@ -50,29 +50,50 @@ collection and monitoring. Perfect for IoT sensors, vehicle tracking systems, an
 - **GET /api/get-speed?limit=500**: Retrieve speed data with a limit on the number of records returned.
 - **GET /api/get-speed/pagination?offset=0&limit=500**: Retrieve speed data with pagination support.
 - **GET /api/get-speed/today?limit=500**: Retrieve speed data for today with a limit on the number of records returned.
+- **GET /api/get-speed/last**: Retrieve the last recorded speed data.
 
 ## 🧪 Example Usage
 
-### 1. Insert Speed Data
+### 1. Check Health Status
+
+```bash
+curl -X GET http://localhost:3000/health
+```
+
+### 2. Insert Speed Data
 
 ```bash
 curl -X POST http://localhost:3000/api/create-speed \
   -H "Content-Type: application/json" \
   -d '{
-    "speed":145
+    "sensor_name":"Sensor A",
+    "speed":145,
+    "lane": 0
   }'
 ```
 
-### 2. Retrieve last n records of Speed Data
+### 3. Retrieve last n records of Speed Data
 
 ```bash
 curl -X GET http://localhost:3000/api/get-speed?limit=500
 ```
 
-### 3. Retrieve Speed Data with Pagination
+### 4. Retrieve Speed Data with Pagination
 
 ```bash
 curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
+```
+
+### 5. Retrieve the last speed
+
+```bash
+curl -X GET http://localhost:3000/api/get-speed/last
+```
+
+### 6. Retrieve Speed Data for Today
+
+```bash
+curl -X GET http://localhost:3000/api/get-speed/today
 ```
 
 ## 📊 Architecture Diagram
@@ -97,6 +118,15 @@ graph TD
     class C postgres;
 ```
 
+## 🛠 Code quality
+
+### Unit Tests available
+
+- **Run Tests**:
+  ```bash
+  cargo test
+  ```
+  
 ## 🤝 Contributing
 
 Contributions are welcome! To contribute:

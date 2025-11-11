@@ -1,1 +1,0 @@
-pub const DATABASE_URL: &str = "postgres://speedstream:speedstream123@localhost:5432/speedstream_db";
