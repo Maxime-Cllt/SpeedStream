@@ -41,11 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .route("/", get(root))
         .route("/health", get(health_check))
-        .route("/api/create-speed", post(create_speed))
-        .route("/api/get-speed", get(get_last_n_speed))
-        .route("/api/get-speed/pagination", get(get_speed_pagination))
-        .route("/api/get-speed/today", get(get_speed_today))
-        .route("/api/get-speed/last", get(get_last_speed))
+        // RESTful endpoints for speed measurements
+        .route("/api/speeds", post(create_speed))
+        .route("/api/speeds", get(get_last_n_speed))
+        .route("/api/speeds/latest", get(get_last_speed))
+        .route("/api/speeds/today", get(get_speed_today))
+        .route("/api/speeds/paginated", get(get_speed_pagination))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
