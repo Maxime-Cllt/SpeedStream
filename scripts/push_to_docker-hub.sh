@@ -5,8 +5,13 @@ set -e
 
 source ../.env
 
-# Set variables for versioning
-VERSION="1.0"
+
+# Read cargo.toml to get the version
+VERSION=$(grep '^version =' ../Cargo.toml | head -1 | awk -F'"' '{print $2}')
+
+echo "Preparing to push Docker image..."
+echo "Image Name: $IMAGE_NAME"
+echo "Version: $VERSION"
 
 echo "Log in to Docker Hub..."
 docker login

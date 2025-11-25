@@ -1,13 +1,13 @@
-
-use crate::core::app_state::AppState;
+use crate::api::payload::create_speed_request::CreateSpeedDataRequest;
 use crate::api::query::pagination_query::PaginationQuery;
 use crate::api::query::query_limit::QueryLimit;
-use crate::api::payload::create_speed_request::CreateSpeedDataRequest;
+use crate::core::app_state::AppState;
 use crate::core::speed_data::SpeedData;
+use crate::database::cache::*;
+use crate::database::crud::*;
+use crate::log_error;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
-use crate::database::crud::*;
-use crate::database::cache::*;
 
 /// Handler functions for the API
 #[inline]
@@ -31,7 +31,7 @@ pub async fn create_speed(
         Ok(speed_data) => {
             // Update cache with the newly inserted data
             if let Err(e) = set_last_speed_in_cache(&mut state.redis, &speed_data).await {
-                println!("Failed to update cache after insert: {e:?}");
+                log_error!("Failed to update cache after insert: {e:?}");
             }
             Ok(StatusCode::CREATED)
         }
@@ -50,7 +50,7 @@ pub async fn get_last_n_speed(
     match fetch_last_n_speed_data(&state.db, limit).await {
         Ok(data) => Ok(Json(data)),
         Err(e) => {
-            println!("Error fetching speed data: {e:?}");
+            log_error!("Error fetching speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -68,7 +68,7 @@ pub async fn get_speed_pagination(
     match fetch_speed_data_with_pagination(&state.db, offset, limit).await {
         Ok(data) => Ok(Json(data)),
         Err(e) => {
-            println!("Error fetching speed data with pagination: {e:?}");
+            log_error!("Error fetching speed data with pagination: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -84,7 +84,7 @@ pub async fn get_speed_today(
     match fetch_speed_data_today(&state.db, limit).await {
         Ok(data) => Ok(Json(data)),
         Err(e) => {
-            println!("Error fetching today's speed data: {e:?}");
+            log_error!("Error fetching today's speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -92,18 +92,16 @@ pub async fn get_speed_today(
 
 /// Retrieves the last speed data entry (with Redis caching)
 #[inline]
-pub async fn get_last_speed(State(mut state): State<AppState>) -> Result<Json<SpeedData>, StatusCode> {
+pub async fn get_last_speed(
+    State(mut state): State<AppState>,
+) -> Result<Json<SpeedData>, StatusCode> {
     // Try to get from cache first
     match get_last_speed_from_cache(&mut state.redis).await {
         Ok(Some(cached_data)) => {
-            println!("Cache hit: returning last speed from Redis");
             return Ok(Json(cached_data));
         }
-        Ok(None) => {
-            println!("Cache miss: fetching from database");
-        }
-        Err(e) => {
-            println!("Cache error (falling back to database): {e:?}");
+        _ => {
+            // Cache miss or error, proceed to fetch from database
         }
     }
 
@@ -112,12 +110,12 @@ pub async fn get_last_speed(State(mut state): State<AppState>) -> Result<Json<Sp
         Ok(data) => {
             // Update cache asynchronously (best effort - don't fail if cache update fails)
             if let Err(e) = set_last_speed_in_cache(&mut state.redis, &data).await {
-                println!("Failed to update cache: {e:?}");
+                log_error!("Failed to update cache: {e:?}");
             }
             Ok(Json(data))
         }
         Err(e) => {
-            println!("Error fetching last speed data: {e:?}");
+            log_error!("Error fetching last speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
