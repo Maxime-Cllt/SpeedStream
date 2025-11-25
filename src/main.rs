@@ -6,13 +6,14 @@ use speed_stream::api::handler::{
     create_speed, get_last_n_speed, get_last_speed, get_speed_pagination, get_speed_today,
     health_check, root,
 };
-use speed_stream::config::constant::DATABASE_URL;
+use speed_stream::config::constant::{DATABASE_URL, REDIS_URL};
 use speed_stream::core::app_state::AppState;
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use speed_stream::telemetry::tracing::log_level::LogLevel;
 use speed_stream::telemetry::tracing::logger::Logger;
+use redis::Client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,12 +25,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = PgPoolOptions::new()
         .max_connections(10)
         .min_connections(1)
-        .connect(DATABASE_URL)
+        .connect(DATABASE_URL.as_str())
         .await?;
 
     println!("Connected to Postgres database");
 
-    let app_state = AppState::new(pool);
+    // Initialize Redis connection
+    let redis_client = Client::open(REDIS_URL.as_str())?;
+    let redis_manager = redis::aio::ConnectionManager::new(redis_client).await?;
+
+    println!("Connected to Redis cache");
+
+    let app_state = AppState::new(pool, redis_manager);
 
     let app = Router::new()
         .route("/", get(root))

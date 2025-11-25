@@ -3,22 +3,21 @@ use crate::core::speed_data::SpeedData;
 use sqlx::PgPool;
 use crate::log_error;
 
-/// Inserts speed data into the database.
+/// Inserts speed data into the database and returns the inserted record.
 #[inline]
 pub async fn insert_speed_data(
     db: &PgPool,
     payload: CreateSpeedDataRequest,
-) -> Result<bool, sqlx::Error> {
+) -> Result<SpeedData, sqlx::Error> {
     const QUERY_INSERT: &str =
-        "INSERT INTO speed (sensor_name,speed,lane) VALUES (NULLIF($1, ''), $2, $3)";
+        "INSERT INTO speed (sensor_name,speed,lane) VALUES (NULLIF($1, ''), $2, $3) RETURNING id, sensor_name, speed, lane, created_at";
 
-    sqlx::query(QUERY_INSERT)
+    sqlx::query_as::<_, SpeedData>(QUERY_INSERT)
         .bind(payload.sensor_name.unwrap_or_default())
         .bind(payload.speed)
         .bind(i32::from(payload.lane))
-        .execute(db)
+        .fetch_one(db)
         .await
-        .map(|_| true)
         .map_err(|e| {
             log_error!("Failed to insert speed data: {e}");
             e

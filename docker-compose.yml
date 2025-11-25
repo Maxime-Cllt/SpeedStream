@@ -22,6 +22,22 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Cache
+  redis:
+    image: redis:8-alpine
+    container_name: speedstream-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - speedstream-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
   # Rust API Application
   api:
     image: maxcllt/speedstream-api:1.0
@@ -31,6 +47,7 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://speedstream:speedstream123@postgres:5432/speedstream_db
+      - REDIS_URL=redis://redis:6379
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=3000
       - RUST_LOG=speedstream=debug,tower_http=debug
@@ -38,6 +55,8 @@ services:
       - DB_MIN_CONNECTIONS=5
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - speedstream-network

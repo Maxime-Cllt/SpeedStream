@@ -7,6 +7,7 @@ use crate::core::speed_data::SpeedData;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
 use crate::database::crud::*;
+use crate::database::cache::*;
 
 /// Handler functions for the API
 #[inline]
@@ -20,18 +21,20 @@ pub async fn health_check(State(state): State<AppState>) -> Result<Json<String>,
     }
 }
 
-/// Handler to create speed data from Arduino
+/// Handler to create speed data from Arduino (with cache update)
 #[inline]
 pub async fn create_speed(
-    State(state): State<AppState>,
+    State(mut state): State<AppState>,
     Json(payload): Json<CreateSpeedDataRequest>,
 ) -> Result<StatusCode, StatusCode> {
     match insert_speed_data(&state.db, payload).await {
-        Ok(bool) => Ok(if bool {
-            StatusCode::CREATED
-        } else {
-            StatusCode::BAD_REQUEST
-        }),
+        Ok(speed_data) => {
+            // Update cache with the newly inserted data
+            if let Err(e) = set_last_speed_in_cache(&mut state.redis, &speed_data).await {
+                println!("Failed to update cache after insert: {e:?}");
+            }
+            Ok(StatusCode::CREATED)
+        }
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
@@ -87,11 +90,32 @@ pub async fn get_speed_today(
     }
 }
 
-/// Retrieves the last speed data entry
+/// Retrieves the last speed data entry (with Redis caching)
 #[inline]
-pub async fn get_last_speed(State(state): State<AppState>) -> Result<Json<SpeedData>, StatusCode> {
+pub async fn get_last_speed(State(mut state): State<AppState>) -> Result<Json<SpeedData>, StatusCode> {
+    // Try to get from cache first
+    match get_last_speed_from_cache(&mut state.redis).await {
+        Ok(Some(cached_data)) => {
+            println!("Cache hit: returning last speed from Redis");
+            return Ok(Json(cached_data));
+        }
+        Ok(None) => {
+            println!("Cache miss: fetching from database");
+        }
+        Err(e) => {
+            println!("Cache error (falling back to database): {e:?}");
+        }
+    }
+
+    // If not in cache or cache error, fetch from database
     match fetch_last_speed(&state.db).await {
-        Ok(data) => Ok(Json(data)),
+        Ok(data) => {
+            // Update cache asynchronously (best effort - don't fail if cache update fails)
+            if let Err(e) = set_last_speed_in_cache(&mut state.redis, &data).await {
+                println!("Failed to update cache: {e:?}");
+            }
+            Ok(Json(data))
+        }
         Err(e) => {
             println!("Error fetching last speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
