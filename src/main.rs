@@ -4,7 +4,7 @@ use axum::{
 };
 use speed_stream::api::handler::{
     create_speed, get_last_n_speed, get_last_speed, get_speed_pagination, get_speed_today,
-    health_check, root,
+    health_check, root, speed_stream,
 };
 use speed_stream::config::constant::{DATABASE_URL, REDIS_URL};
 use speed_stream::core::app_state::AppState;
@@ -36,7 +36,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Connected to Redis cache");
 
-    let app_state = AppState::new(pool, redis_manager);
+    // Create broadcast channel for real-time speed notifications
+    // Channel capacity of 100 means it can hold up to 100 messages before dropping oldest
+    let (broadcast_tx, _) = tokio::sync::broadcast::channel(100);
+
+    let app_state = AppState::new(pool, redis_manager, broadcast_tx);
 
     let app = Router::new()
         .route("/", get(root))
@@ -47,6 +51,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/speeds/latest", get(get_last_speed))
         .route("/api/speeds/today", get(get_speed_today))
         .route("/api/speeds/paginated", get(get_speed_pagination))
+        // Real-time SSE endpoint for speed notifications
+        .route("/api/speeds/stream", get(speed_stream))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);

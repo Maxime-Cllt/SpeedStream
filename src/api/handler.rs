@@ -8,6 +8,9 @@ use crate::database::crud::*;
 use crate::log_error;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
+use axum::response::sse::{Event, Sse};
+use futures_util::stream::Stream;
+use std::convert::Infallible;
 
 /// Handler functions for the API
 #[inline]
@@ -21,7 +24,7 @@ pub async fn health_check(State(state): State<AppState>) -> Result<Json<String>,
     }
 }
 
-/// Handler to create speed data from Arduino (with cache update)
+/// Handler to create speed data from Arduino (with cache update and real-time broadcast)
 #[inline]
 pub async fn create_speed(
     State(mut state): State<AppState>,
@@ -33,6 +36,11 @@ pub async fn create_speed(
             if let Err(e) = set_last_speed_in_cache(&mut state.redis, &speed_data).await {
                 log_error!("Failed to update cache after insert: {e:?}");
             }
+
+            // Broadcast the new speed data to all connected clients
+            // We ignore the result because it's OK if no one is listening
+            let _ = state.broadcast_tx.send(speed_data);
+
             Ok(StatusCode::CREATED)
         }
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -125,4 +133,27 @@ pub async fn get_last_speed(
 #[inline]
 pub async fn root() -> &'static str {
     "Sensor Data API - Running with Axum & Postgres"
+}
+
+/// Server-Sent Events endpoint for real-time speed notifications
+/// Clients can connect to this endpoint to receive speed updates as they happen
+#[inline]
+pub async fn speed_stream(
+    State(state): State<AppState>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    // Subscribe to the broadcast channel
+    let mut rx = state.broadcast_tx.subscribe();
+
+    // Create a stream that yields SSE events
+    let stream = async_stream::stream! {
+        while let Ok(speed_data) = rx.recv().await {
+            // Serialize the speed data to JSON
+            if let Ok(json) = serde_json::to_string(&speed_data) {
+                // Yield an SSE event with the JSON data
+                yield Ok(Event::default().data(json));
+            }
+        }
+    };
+
+    Sse::new(stream)
 }
