@@ -13,6 +13,7 @@ http://localhost:3000
   - [Get Latest Speed](#get-latest-speed)
   - [Get Today's Speeds](#get-todays-speeds)
   - [Get Paginated Speeds](#get-paginated-speeds)
+  - [Real-time Speed Stream (SSE)](#real-time-speed-stream-sse)
 
 ---
 
@@ -257,6 +258,143 @@ fetch(`http://localhost:3000/api/speeds/paginated?offset=${offset}&limit=${items
 
 ---
 
+### Real-time Speed Stream (SSE)
+
+**`GET /api/speeds/stream`**
+
+Subscribe to real-time speed measurements using Server-Sent Events (SSE). This endpoint establishes a persistent connection and pushes new speed data to clients immediately as sensors submit measurements.
+
+**Use Case**
+Perfect for real-time dashboards, monitoring applications, and live data visualization without the need for polling.
+
+**Connection**
+```bash
+# Using curl
+curl -N http://localhost:3000/api/speeds/stream
+
+# Using httpie
+http --stream http://localhost:3000/api/speeds/stream
+```
+
+**Event Stream Format**
+Each new speed measurement is sent as an SSE event:
+
+```
+data: {"id":123,"sensor_name":"Highway Sensor 001","speed":75.3,"lane":1,"created_at":"2025-11-25T14:30:00.123456Z"}
+
+data: {"id":124,"sensor_name":"Sensor A","speed":62.1,"lane":0,"created_at":"2025-11-25T14:30:05.789012Z"}
+```
+
+**JavaScript/TypeScript Example**
+
+```javascript
+// Establish SSE connection
+const eventSource = new EventSource('http://localhost:3000/api/speeds/stream');
+
+// Listen for new speed measurements
+eventSource.onmessage = (event) => {
+  const speedData = JSON.parse(event.data);
+  console.log('New speed received:', speedData);
+  // Update your UI here
+};
+
+// Handle errors
+eventSource.onerror = (error) => {
+  console.error('SSE connection error:', error);
+  // EventSource automatically reconnects on connection loss
+};
+
+// Close connection when done
+// eventSource.close();
+```
+
+**React Hook Example**
+
+```typescript
+import { useEffect, useState } from 'react';
+
+interface SpeedData {
+  id: number;
+  sensor_name: string | null;
+  speed: number;
+  lane: 0 | 1;
+  created_at: string;
+}
+
+function useSpeedStream() {
+  const [latestSpeed, setLatestSpeed] = useState<SpeedData | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const eventSource = new EventSource('http://localhost:3000/api/speeds/stream');
+
+    eventSource.onopen = () => {
+      console.log('SSE connected');
+      setIsConnected(true);
+    };
+
+    eventSource.onmessage = (event) => {
+      const speedData: SpeedData = JSON.parse(event.data);
+      setLatestSpeed(speedData);
+    };
+
+    eventSource.onerror = () => {
+      setIsConnected(false);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
+  return { latestSpeed, isConnected };
+}
+
+// Usage in component
+function Dashboard() {
+  const { latestSpeed, isConnected } = useSpeedStream();
+
+  return (
+    <div>
+      <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
+      {latestSpeed && (
+        <div>
+          <p>Speed: {latestSpeed.speed} km/h</p>
+          <p>Lane: {latestSpeed.lane === 0 ? 'Left' : 'Right'}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+**Status Codes**
+- `200 OK` - SSE connection established successfully
+- Connection remains open indefinitely until client disconnects
+
+**Features**
+- **Zero Latency**: Measurements are pushed immediately when received
+- **Auto-reconnect**: Browser automatically reconnects if connection drops
+- **No Polling**: Eliminates the need for repeated API calls
+- **Multiple Clients**: Supports unlimited concurrent connections
+- **Efficient**: Uses HTTP/1.1 chunked transfer encoding
+
+**Performance Notes**
+- The broadcast channel has a capacity of 100 messages
+- If a slow client can't keep up, older messages are dropped to prevent memory issues
+- Connection stays open indefinitely (no timeout)
+- CORS is enabled for cross-origin connections
+
+**Browser Compatibility**
+Server-Sent Events are supported in all modern browsers:
+- ✅ Chrome/Edge 6+
+- ✅ Firefox 6+
+- ✅ Safari 5+
+- ✅ Opera 11+
+- ❌ Internet Explorer (use polyfill)
+
+---
+
 ## Error Responses
 
 All endpoints may return error responses in the following format:
@@ -296,7 +434,9 @@ interface SpeedData {
 
 ## Performance & Caching
 
-The API implements a **cache-aside** strategy using Redis:
+The API implements multiple performance optimization strategies:
+
+### Redis Caching (Cache-Aside Pattern)
 
 1. **Read Operations** (`GET /api/speeds/latest`):
    - First checks Redis cache
@@ -309,6 +449,21 @@ The API implements a **cache-aside** strategy using Redis:
    - Ensures cache consistency
 
 This provides significant performance improvements for frequently accessed data, especially for the latest speed measurement endpoint.
+
+### Real-time Broadcasting
+
+The API uses an in-memory broadcast channel for real-time notifications:
+
+1. **Write Operations** (`POST /api/speeds`):
+   - After database write and cache update
+   - Broadcasts speed data to all connected SSE clients
+   - Zero latency notification delivery
+
+2. **SSE Connections** (`GET /api/speeds/stream`):
+   - Each client subscribes to the broadcast channel
+   - No polling overhead
+   - Efficient memory usage with 100-message capacity
+   - Supports unlimited concurrent connections
 
 ---
 
@@ -348,6 +503,10 @@ curl http://localhost:3000/api/speeds/today
 
 # 6. Get measurements with pagination
 curl http://localhost:3000/api/speeds/paginated?offset=0&limit=25
+
+# 7. Subscribe to real-time updates (SSE)
+curl -N http://localhost:3000/api/speeds/stream
+# This will keep the connection open and display new measurements as they arrive
 ```
 
 ### Arduino/IoT Device Example
