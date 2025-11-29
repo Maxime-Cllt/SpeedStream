@@ -2,18 +2,18 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use redis::Client;
 use speed_stream::api::handler::{
     create_speed, get_last_n_speed, get_last_speed, get_speed_pagination, get_speed_today,
     health_check, root, speed_stream,
 };
 use speed_stream::config::constant::{DATABASE_URL, REDIS_URL};
 use speed_stream::core::app_state::AppState;
+use speed_stream::telemetry::tracing::log_level::LogLevel;
+use speed_stream::telemetry::tracing::logger::Logger;
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use speed_stream::telemetry::tracing::log_level::LogLevel;
-use speed_stream::telemetry::tracing::logger::Logger;
-use redis::Client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -57,7 +57,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 
-    let listener: TcpListener = TcpListener::bind("0.0.0.0:3000").await?;
+    // Bind to address and serve the application
+    let listener: TcpListener = TcpListener::bind("0.0.0. 0:8080").await?;
 
     println!("Listening on http://{}", listener.local_addr()?);
 
