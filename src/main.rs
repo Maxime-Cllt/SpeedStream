@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(app_state);
 
     // Bind to address and serve the application
-    let listener: TcpListener = TcpListener::bind("0.0.0. 0:8080").await?;
+    let listener: TcpListener = TcpListener::bind("0.0.0.0:8080").await?;
 
     println!("Listening on http://{}", listener.local_addr()?);
 
