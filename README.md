@@ -58,13 +58,13 @@ collection and monitoring. Perfect for vehicle tracking speed systems and perfor
 ### 1. Check Health Status
 
 ```bash
-curl -X GET http://localhost:3000/health
+curl -X GET http://localhost:8080/health
 ```
 
 ### 2. Insert Speed Data
 
 ```bash
-curl -X POST http://localhost:3000/api/create-speed \
+curl -X POST http://localhost:8080/api/create-speed \
   -H "Content-Type: application/json" \
   -d '{
     "sensor_name":"Sensor A",
@@ -76,25 +76,25 @@ curl -X POST http://localhost:3000/api/create-speed \
 ### 3. Retrieve last n records of Speed Data
 
 ```bash
-curl -X GET http://localhost:3000/api/get-speed?limit=500
+curl -X GET http://localhost:8080/api/get-speed?limit=500
 ```
 
 ### 4. Retrieve Speed Data with Pagination
 
 ```bash
-curl -X GET http://localhost:3000/api/get-speed/pagination?offset=0&limit=500
+curl -X GET http://localhost:8080/api/get-speed/pagination?offset=0&limit=500
 ```
 
 ### 5. Retrieve the last speed
 
 ```bash
-curl -X GET http://localhost:3000/api/get-speed/last
+curl -X GET http://localhost:8080/api/get-speed/last
 ```
 
 ### 6. Retrieve Speed Data for Today
 
 ```bash
-curl -X GET http://localhost:3000/api/get-speed/today
+curl -X GET http://localhost:8080/api/get-speed/today
 ```
 
 ## 📊 Architecture Diagram

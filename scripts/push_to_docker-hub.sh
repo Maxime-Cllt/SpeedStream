@@ -17,7 +17,7 @@ echo "Log in to Docker Hub..."
 docker login
 
 echo "Building Docker image..."
-docker build -t $IMAGE_NAME:$VERSION ../
+docker build --no-cache -t $IMAGE_NAME:$VERSION ../
 
 echo "Tagging Docker image..."
 docker tag $IMAGE_NAME:$VERSION $DOCKER_LOGIN_USERNAME/$IMAGE_NAME:$VERSION

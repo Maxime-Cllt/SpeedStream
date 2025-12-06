@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-http://localhost:3000
+http://localhost:8080
 ```
 
 ## Table of Contents
@@ -63,7 +63,7 @@ Create a new speed measurement from a sensor.
 
 **Example Request**
 ```bash
-curl -X POST http://localhost:3000/api/speeds \
+curl -X POST http://localhost:8080/api/speeds \
   -H "Content-Type: application/json" \
   -d '{
     "sensor_name": "Highway Sensor 001",
@@ -96,7 +96,7 @@ Retrieve the last N speed measurements from the database.
 
 **Example Request**
 ```bash
-curl http://localhost:3000/api/speeds?limit=50
+curl http://localhost:8080/api/speeds?limit=50
 ```
 
 **Response**
@@ -142,7 +142,7 @@ Retrieve the most recent speed measurement. This endpoint uses Redis caching for
 
 **Example Request**
 ```bash
-curl http://localhost:3000/api/speeds/latest
+curl http://localhost:8080/api/speeds/latest
 ```
 
 **Response**
@@ -180,7 +180,7 @@ Retrieve all speed measurements recorded today (from midnight UTC).
 
 **Example Request**
 ```bash
-curl http://localhost:3000/api/speeds/today?limit=200
+curl http://localhost:8080/api/speeds/today?limit=200
 ```
 
 **Response**
@@ -224,7 +224,7 @@ Retrieve speed measurements with pagination support for efficient data browsing.
 **Example Request**
 ```bash
 # Get records 100-149 (page 2 with 50 items per page)
-curl http://localhost:3000/api/speeds/paginated?offset=100&limit=50
+curl http://localhost:8080/api/speeds/paginated?offset=100&limit=50
 ```
 
 **Response**
@@ -251,7 +251,7 @@ const itemsPerPage = 50;
 const currentPage = 1;
 const offset = currentPage * itemsPerPage;
 
-fetch(`http://localhost:3000/api/speeds/paginated?offset=${offset}&limit=${itemsPerPage}`)
+fetch(`http://localhost:8080/api/speeds/paginated?offset=${offset}&limit=${itemsPerPage}`)
   .then(response => response.json())
   .then(data => console.log(data));
 ```
@@ -270,10 +270,10 @@ Perfect for real-time dashboards, monitoring applications, and live data visuali
 **Connection**
 ```bash
 # Using curl
-curl -N http://localhost:3000/api/speeds/stream
+curl -N http://localhost:8080/api/speeds/stream
 
 # Using httpie
-http --stream http://localhost:3000/api/speeds/stream
+http --stream http://localhost:8080/api/speeds/stream
 ```
 
 **Event Stream Format**
@@ -289,7 +289,7 @@ data: {"id":124,"sensor_name":"Sensor A","speed":62.1,"lane":0,"created_at":"202
 
 ```javascript
 // Establish SSE connection
-const eventSource = new EventSource('http://localhost:3000/api/speeds/stream');
+const eventSource = new EventSource('http://localhost:8080/api/speeds/stream');
 
 // Listen for new speed measurements
 eventSource.onmessage = (event) => {
@@ -326,7 +326,7 @@ function useSpeedStream() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:3000/api/speeds/stream');
+    const eventSource = new EventSource('http://localhost:8080/api/speeds/stream');
 
     eventSource.onopen = () => {
       console.log('SSE connected');
@@ -485,27 +485,27 @@ CORS is enabled for all origins (`permissive` mode). In production, you should r
 
 ```bash
 # 1. Check API health
-curl http://localhost:3000/health
+curl http://localhost:8080/health
 
 # 2. Create a new speed measurement
-curl -X POST http://localhost:3000/api/speeds \
+curl -X POST http://localhost:8080/api/speeds \
   -H "Content-Type: application/json" \
   -d '{"sensor_name": "Highway 101 North", "speed": 72.5, "lane": 1}'
 
 # 3. Get the latest measurement (cached in Redis)
-curl http://localhost:3000/api/speeds/latest
+curl http://localhost:8080/api/speeds/latest
 
 # 4. Get last 10 measurements
-curl http://localhost:3000/api/speeds?limit=10
+curl http://localhost:8080/api/speeds?limit=10
 
 # 5. Get today's measurements
-curl http://localhost:3000/api/speeds/today
+curl http://localhost:8080/api/speeds/today
 
 # 6. Get measurements with pagination
-curl http://localhost:3000/api/speeds/paginated?offset=0&limit=25
+curl http://localhost:8080/api/speeds/paginated?offset=0&limit=25
 
 # 7. Subscribe to real-time updates (SSE)
-curl -N http://localhost:3000/api/speeds/stream
+curl -N http://localhost:8080/api/speeds/stream
 # This will keep the connection open and display new measurements as they arrive
 ```
 
@@ -518,7 +518,7 @@ curl -N http://localhost:3000/api/speeds/stream
 
 void sendSpeedData(float speed, int lane) {
   HTTPClient http;
-  http.begin("http://your-server:3000/api/speeds");
+  http.begin("http://your-server:8080/api/speeds");
   http.addHeader("Content-Type", "application/json");
 
   String payload = "{\"sensor_name\":\"Arduino-001\",\"speed\":" +

@@ -44,12 +44,12 @@ services:
     container_name: speedstream-api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "8080:8080"
     environment:
       - DATABASE_URL=postgresql://speedstream:speedstream123@postgres:5432/speedstream_db
       - REDIS_URL=redis://redis:6379
       - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=3000
+      - SERVER_PORT=8080
       - RUST_LOG=speedstream=debug,tower_http=debug
       - DB_MAX_CONNECTIONS=20
       - DB_MIN_CONNECTIONS=5
@@ -61,7 +61,7 @@ services:
     networks:
       - speedstream-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
