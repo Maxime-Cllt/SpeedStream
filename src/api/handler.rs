@@ -132,7 +132,7 @@ pub async fn get_last_speed(
 /// Root handler for the API
 #[inline]
 pub async fn root() -> &'static str {
-    "Sensor Data API - Running with Axum & Postgres"
+    "Sensor Data API - Running with Axum & Postgres - v1.1.0"
 }
 
 /// Server-Sent Events endpoint for real-time speed notifications
