@@ -24,7 +24,10 @@ impl DateRangeQuery {
         }
 
         // If neither format works, return an error
-        Err(format!("Invalid date format: '{}'. Expected 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'", date_str))
+        Err(format!(
+            "Invalid date format: '{}'. Expected 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'",
+            date_str
+        ))
     }
 
     /// Parse the start_date field
@@ -46,6 +49,46 @@ impl DateRangeQuery {
             return Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc));
         }
 
-        Err(format!("Invalid date format: '{}'. Expected 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'", &self.end_date))
+        Err(format!(
+            "Invalid date format: '{}'. Expected 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'",
+            &self.end_date
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_date() {
+        let dt1 = DateRangeQuery::parse_date("2024-01-01 12:30:45").unwrap();
+        assert_eq!(dt1.to_rfc3339(), "2024-01-01T12:30:45+00:00");
+
+        let dt2 = DateRangeQuery::parse_date("2024-01-01").unwrap();
+        assert_eq!(dt2.to_rfc3339(), "2024-01-01T00:00:00+00:00");
+
+        let err = DateRangeQuery::parse_date("2024/01/01").unwrap_err();
+        assert!(err.contains("Invalid date format"));
+    }
+
+    #[test]
+    fn test_parse_start_date() {
+        let query = DateRangeQuery {
+            start_date: "2024-01-01 10:00:00".to_string(),
+            end_date: "2024-01-02".to_string(),
+        };
+        let start_dt = query.parse_start_date().unwrap();
+        assert_eq!(start_dt.to_rfc3339(), "2024-01-01T10:00:00+00:00");
+    }
+
+    #[test]
+    fn test_parse_end_date() {
+        let query = DateRangeQuery {
+            start_date: "2024-01-01".to_string(),
+            end_date: "2024-01-02".to_string(),
+        };
+        let end_dt = query.parse_end_date().unwrap();
+        assert_eq!(end_dt.to_rfc3339(), "2024-01-02T23:59:59+00:00");
     }
 }
