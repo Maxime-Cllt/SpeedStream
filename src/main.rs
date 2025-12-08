@@ -4,8 +4,8 @@ use axum::{
 };
 use redis::Client;
 use speed_stream::api::handler::{
-    create_speed, get_last_n_speed, get_last_speed, get_speed_pagination, get_speed_today,
-    health_check, root, speed_stream,
+    create_speed, get_last_n_speed, get_last_speed, get_speed_by_date_range, get_speed_pagination,
+    get_speed_today, health_check, root, speed_stream,
 };
 use speed_stream::config::constant::{DATABASE_URL, REDIS_URL};
 use speed_stream::core::app_state::AppState;
@@ -51,6 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/speeds/latest", get(get_last_speed))
         .route("/api/speeds/today", get(get_speed_today))
         .route("/api/speeds/paginated", get(get_speed_pagination))
+        .route("/api/speeds/range", get(get_speed_by_date_range))
         // Real-time SSE endpoint for speed notifications
         .route("/api/speeds/stream", get(speed_stream))
         .layer(CorsLayer::permissive())

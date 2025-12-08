@@ -1,4 +1,5 @@
 use crate::api::payload::create_speed_request::CreateSpeedDataRequest;
+use crate::api::query::date_range_query::DateRangeQuery;
 use crate::api::query::pagination_query::PaginationQuery;
 use crate::api::query::query_limit::QueryLimit;
 use crate::core::app_state::AppState;
@@ -133,6 +134,39 @@ pub async fn get_last_speed(
 #[inline]
 pub async fn root() -> &'static str {
     "Sensor Data API - Running with Axum & Postgres - v1.1.0"
+}
+
+/// Retrieves all speed data entries within a specified date range
+#[inline]
+pub async fn get_speed_by_date_range(
+    State(state): State<AppState>,
+    Query(params): Query<DateRangeQuery>,
+) -> Result<Json<Vec<SpeedData>>, StatusCode> {
+    // Parse the start and end dates
+    let start_date = match params.parse_start_date() {
+        Ok(date) => date,
+        Err(e) => {
+            log_error!("Invalid start_date format: {e:?}");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+
+    let end_date = match params.parse_end_date() {
+        Ok(date) => date,
+        Err(e) => {
+            log_error!("Invalid end_date format: {e:?}");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+
+    // Fetch data from database
+    match fetch_speed_data_by_date_range(&state.db, start_date, end_date).await {
+        Ok(data) => Ok(Json(data)),
+        Err(e) => {
+            log_error!("Error fetching speed data by date range: {e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
 /// Server-Sent Events endpoint for real-time speed notifications

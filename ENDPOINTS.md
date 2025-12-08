@@ -13,6 +13,7 @@ http://localhost:8080
   - [Get Latest Speed](#get-latest-speed)
   - [Get Today's Speeds](#get-todays-speeds)
   - [Get Paginated Speeds](#get-paginated-speeds)
+  - [Get Speeds by Date Range](#get-speeds-by-date-range)
   - [Real-time Speed Stream (SSE)](#real-time-speed-stream-sse)
 
 ---
@@ -255,6 +256,185 @@ fetch(`http://localhost:8080/api/speeds/paginated?offset=${offset}&limit=${items
   .then(response => response.json())
   .then(data => console.log(data));
 ```
+
+---
+
+### Get Speeds by Date Range
+
+**`GET /api/speeds/range?start_date={start}&end_date={end}`**
+
+Retrieve all speed measurements recorded within a specific date range. This endpoint is useful for generating reports, analyzing historical data, or exporting data for a specific time period.
+
+**Query Parameters**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `start_date` | string | Yes | Start of the date range (inclusive) |
+| `end_date` | string | Yes | End of the date range (inclusive) |
+
+**Date Format**
+The API accepts dates in two formats:
+- **Date only**: `YYYY-MM-DD` (e.g., `2024-01-15`)
+- **Date with time**: `YYYY-MM-DD HH:MM:SS` (e.g., `2024-01-15 14:30:00`)
+
+**Example Requests**
+
+```bash
+# Get all speeds for a specific day
+curl "http://localhost:8080/api/speeds/range?start_date=2024-01-15&end_date=2024-01-15"
+
+# Get all speeds for a month
+curl "http://localhost:8080/api/speeds/range?start_date=2024-01-01&end_date=2024-01-31"
+
+# Get speeds with specific time range
+curl "http://localhost:8080/api/speeds/range?start_date=2024-01-15%2008:00:00&end_date=2024-01-15%2018:00:00"
+
+# URL encoded version (spaces become %20)
+curl "http://localhost:8080/api/speeds/range?start_date=2024-01-15+08:00:00&end_date=2024-01-15+18:00:00"
+```
+
+**Response**
+```json
+[
+  {
+    "id": 456,
+    "sensor_name": "Highway Sensor 001",
+    "speed": 75.3,
+    "lane": 1,
+    "created_at": "2024-01-15T08:15:23.123456Z"
+  },
+  {
+    "id": 457,
+    "sensor_name": "Highway Sensor 002",
+    "speed": 68.5,
+    "lane": 0,
+    "created_at": "2024-01-15T09:22:10.987654Z"
+  },
+  {
+    "id": 458,
+    "sensor_name": null,
+    "speed": 82.1,
+    "lane": 1,
+    "created_at": "2024-01-15T14:45:55.456789Z"
+  }
+]
+```
+
+**Status Codes**
+- `200 OK` - Success (may return empty array if no data in range)
+- `400 Bad Request` - Invalid date format
+- `500 Internal Server Error` - Database error
+
+**Sorting**
+Results are sorted by `created_at` in **ascending order** (oldest first), making it easier to analyze data chronologically.
+
+**Use Cases**
+- **Daily Reports**: Get all speeds for a specific day (00:00:00 to 23:59:59)
+  ```
+  start_date=2024-01-15&end_date=2024-01-15
+  ```
+  This will automatically search from 2024-01-15 00:00:00 to 2024-01-15 23:59:59
+
+- **Weekly Analysis**: Get speeds for a week
+  ```
+  start_date=2024-01-08&end_date=2024-01-14
+  ```
+  Includes all data from Jan 8th 00:00:00 to Jan 14th 23:59:59
+
+- **Peak Hours**: Get speeds during specific hours (rush hour)
+  ```
+  start_date=2024-01-15 07:00:00&end_date=2024-01-15 09:00:00
+  ```
+  Precise time range from 7:00 AM to 9:00 AM
+
+- **Monthly Export**: Export an entire month of data
+  ```
+  start_date=2024-01-01&end_date=2024-01-31
+  ```
+  All data from January 1st to January 31st (inclusive)
+
+- **Specific Time Window**: Get data between specific timestamps
+  ```
+  start_date=2024-01-15 14:30:00&end_date=2024-01-15 18:45:00
+  ```
+  From 2:30 PM to 6:45 PM on January 15th
+
+**JavaScript/TypeScript Example**
+
+```javascript
+// Fetch speeds for a specific date range
+async function getSpeedsByDateRange(startDate, endDate) {
+  const params = new URLSearchParams({
+    start_date: startDate,
+    end_date: endDate
+  });
+
+  const response = await fetch(`http://localhost:8080/api/speeds/range?${params}`);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const speeds = await response.json();
+  return speeds;
+}
+
+// Usage examples
+// Get all speeds from January 2024
+const januarySpeeds = await getSpeedsByDateRange('2024-01-01', '2024-01-31');
+
+// Get speeds for today
+const today = new Date().toISOString().split('T')[0];
+const todaySpeeds = await getSpeedsByDateRange(today, today);
+
+// Get speeds for specific time window
+const morningSpeeds = await getSpeedsByDateRange(
+  '2024-01-15 06:00:00',
+  '2024-01-15 12:00:00'
+);
+```
+
+**Python Example**
+
+```python
+import requests
+from datetime import datetime, timedelta
+
+def get_speeds_by_date_range(start_date, end_date):
+    params = {
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    response = requests.get('http://localhost:8080/api/speeds/range', params=params)
+    response.raise_for_status()
+    return response.json()
+
+# Get speeds for the last 7 days
+end_date = datetime.now()
+start_date = end_date - timedelta(days=7)
+
+speeds = get_speeds_by_date_range(
+    start_date.strftime('%Y-%m-%d'),
+    end_date.strftime('%Y-%m-%d')
+)
+
+# Calculate average speed
+if speeds:
+    avg_speed = sum(s['speed'] for s in speeds) / len(speeds)
+    print(f"Average speed over last 7 days: {avg_speed:.2f} km/h")
+```
+
+**Notes**
+- No limit on the number of results returned (unlike other endpoints)
+- For very large date ranges, the query may take longer to execute
+- Both `start_date` and `end_date` are **inclusive**
+- Times are in UTC timezone
+- Invalid date formats will result in a 400 Bad Request error with details
+- When providing only a date (without time):
+  - `start_date` defaults to **00:00:00** (start of the day)
+  - `end_date` defaults to **23:59:59** (end of the day)
+  - This ensures the entire day is included in the search
+- When providing date with time, the exact timestamp is used
+- Empty date range (start > end) will return an empty array
 
 ---
 
@@ -504,7 +684,10 @@ curl http://localhost:8080/api/speeds/today
 # 6. Get measurements with pagination
 curl http://localhost:8080/api/speeds/paginated?offset=0&limit=25
 
-# 7. Subscribe to real-time updates (SSE)
+# 7. Get measurements by date range
+curl "http://localhost:8080/api/speeds/range?start_date=2024-01-01&end_date=2024-01-31"
+
+# 8. Subscribe to real-time updates (SSE)
 curl -N http://localhost:8080/api/speeds/stream
 # This will keep the connection open and display new measurements as they arrive
 ```

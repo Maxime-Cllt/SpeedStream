@@ -109,3 +109,29 @@ pub async fn fetch_last_speed(db: &PgPool) -> Result<SpeedData, sqlx::Error> {
         row.created_at,
     ))
 }
+
+/// Fetches all speed data entries within a specified date range
+#[inline]
+pub async fn fetch_speed_data_by_date_range(
+    db: &PgPool,
+    start_date: chrono::DateTime<chrono::Utc>,
+    end_date: chrono::DateTime<chrono::Utc>,
+) -> Result<Vec<SpeedData>, sqlx::Error> {
+    const QUERY: &str =
+        "SELECT id,sensor_name,speed,lane,created_at FROM speed WHERE created_at >= $1 AND created_at <= $2 ORDER BY created_at ASC";
+
+    let rows: Vec<SpeedData> = sqlx::query_as::<_, SpeedData>(QUERY)
+        .bind(start_date)
+        .bind(end_date)
+        .fetch_all(db)
+        .await
+        .map_err(|e| {
+            log_error!("Failed to fetch speed data by date range: {e}");
+            e
+        })?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| SpeedData::new(row.id, row.sensor_name, row.speed, row.lane, row.created_at))
+        .collect())
+}
