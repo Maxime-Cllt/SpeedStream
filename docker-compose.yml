@@ -71,54 +71,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Next.js Frontend Application
-  race-board:
-    image: ${RACEBOARD_IMAGE:-maxcllt/race-board}:${RACEBOARD_VERSION:-latest}
-    container_name: race-board
-    restart: unless-stopped
-    ports:
-      - "${RACEBOARD_PORT:-3000}:3000"
-    environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_APP_MODE=${NEXT_PUBLIC_APP_MODE:-PROD}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
-    env_file:
-      - .env
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - speedstream-network
-    healthcheck:
-      test:
-        - CMD
-        - wget
-        - --no-verbose
-        - --tries=1
-        - --spider
-        - http://localhost:3000/
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    security_opt:
-      - no-new-privileges:true
-    deploy:
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: 768M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
 volumes:
   postgres_data:
     driver: local
