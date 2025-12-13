@@ -17,6 +17,10 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+    // Load environment variables from .env file if present
+    dotenvy::dotenv().ok();
+
     println!("Starting Sensor API Server...");
 
     // Create a logger that writes to "app.log" with minimum level of Info
