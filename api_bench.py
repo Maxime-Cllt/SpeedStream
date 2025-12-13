@@ -20,7 +20,7 @@ import json
 @dataclass
 class BenchmarkConfig:
     """Configuration for the benchmark"""
-    url: str = "http://localhost:3000/api/get-speed/today"
+    url: str = "http://localhost:8080/api/get-speed/today"
     num_requests: int = 50000
     concurrency: int = 100
     timeout: float = 30.0
@@ -346,7 +346,7 @@ class RobustBenchmark:
 
 def main():
     parser = argparse.ArgumentParser(description="Robust HTTP Benchmark Tool")
-    parser.add_argument("--url", default="http://localhost:3000/health", help="Target URL")
+    parser.add_argument("--url", default="http://localhost:8080/health", help="Target URL")
     parser.add_argument("--requests", "-n", type=int, default=50000, help="Number of requests")
     parser.add_argument("--concurrency", "-c", type=int, default=100, help="Concurrent requests")
     parser.add_argument("--timeout", "-t", type=float, default=30.0, help="Request timeout in seconds")

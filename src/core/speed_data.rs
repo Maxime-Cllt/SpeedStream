@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 /// Represents speed data collected from a sensor on track
-#[derive(Debug, Deserialize, Serialize, FromRow)]
+#[derive(Debug, Clone, Deserialize, Serialize, FromRow)]
 #[non_exhaustive]
 #[must_use]
 pub struct SpeedData {

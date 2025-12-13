@@ -46,11 +46,11 @@ RUN chown -R speedstream:speedstream /app
 USER speedstream
 
 # Expose port for Axum application
-EXPOSE 3000
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Run the binary
 CMD ["./speedstream"]

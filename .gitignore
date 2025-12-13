@@ -1,4 +1,29 @@
 /target
 .idea
 .env
+.env.backup.*
 *.log
+
+# Secrets directory (Docker secrets)
+secrets/
+
+# SSL Certificates (ne jamais commiter les certificats!)
+nginx/ssl/*.crt
+nginx/ssl/*.key
+nginx/ssl/*.pem
+nginx/ssl/*.csr
+
+# Traefik certificates
+traefik-certificates/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+
+# Backups
+backup/
+*.sql
+*.rdb
+
+# Nginx logs
+nginx_logs/
