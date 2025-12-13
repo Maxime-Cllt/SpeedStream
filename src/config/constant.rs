@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 /// Database connection URL
 pub static DATABASE_URL: LazyLock<String> = LazyLock::new(|| {
-    let user = std::env::var("POSTGRES_USER").unwrap_or_else(|_| "speedstream_user".to_string());
+    let user = std::env::var("POSTGRES_USER").unwrap_or_else(|_| "speedstream".to_string());
     let password = std::env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "speedstream123".to_string());
     let host = std::env::var("POSTGRES_HOST").unwrap_or_else(|_| "postgres".to_string());
     let port = std::env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string());
@@ -11,11 +11,20 @@ pub static DATABASE_URL: LazyLock<String> = LazyLock::new(|| {
     format!("postgresql://{user}:{password}@{host}:{port}/{db}")
 });
 
-/// Redis connection URL
+/// Redis connection URL with authentication
 pub static REDIS_URL: LazyLock<String> = LazyLock::new(|| {
     let host = std::env::var("REDIS_HOST").unwrap_or_else(|_| "redis".to_string());
     let port = std::env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string());
-    format!("redis://{host}:{port}")
+
+    // Support for Redis password authentication
+    match std::env::var("REDIS_PASSWORD") {
+        Ok(password) if !password.is_empty() => {
+            format!("redis://:{password}@{host}:{port}")
+        }
+        _ => {
+            format!("redis://{host}:{port}")
+        }
+    }
 });
 
 /// Allowed CORS origins
