@@ -46,12 +46,7 @@ collection and monitoring. Perfect for vehicle tracking speed systems and perfor
 
 ## 🚀️ Endpoints
 
-- **GET /health**: Check the health status of the API.
-- **POST /api/create-speed**: Submit new speed data into the database.
-- **GET /api/get-speed?limit=500**: Retrieve speed data with a limit on the number of records returned.
-- **GET /api/get-speed/pagination?offset=0&limit=500**: Retrieve speed data with pagination support.
-- **GET /api/get-speed/today?limit=500**: Retrieve speed data for today with a limit on the number of records returned.
-- **GET /api/get-speed/last**: Retrieve the last recorded speed data.
+See the [API Documentation](./docs/ENDPOINTS.md) for detailed information on available endpoints.
 
 ## 📊 Architecture Diagram
 
