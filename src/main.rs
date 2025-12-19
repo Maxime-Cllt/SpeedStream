@@ -1,4 +1,5 @@
 use axum::{
+    middleware,
     routing::{get, post},
     Router,
 };
@@ -9,6 +10,7 @@ use speed_stream::api::handler::{
 };
 use speed_stream::config::constant::{DATABASE_URL, REDIS_URL};
 use speed_stream::core::app_state::AppState;
+use speed_stream::middleware::auth::auth_middleware;
 use speed_stream::telemetry::tracing::log_level::LogLevel;
 use speed_stream::telemetry::tracing::logger::Logger;
 use sqlx::postgres::PgPoolOptions;
@@ -47,9 +49,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app_state = AppState::new(pool, redis_manager, broadcast_tx);
 
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/health", get(health_check))
+    // Protected routes that require Bearer token authentication
+    let protected_routes = Router::new()
         // RESTful endpoints for speed measurements
         .route("/api/speeds", post(create_speed))
         .route("/api/speeds", get(get_last_n_speed))
@@ -59,6 +60,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/speeds/range", get(get_speed_by_date_range))
         // Real-time SSE endpoint for speed notifications
         .route("/api/speeds/stream", get(speed_stream))
+        .route_layer(middleware::from_fn_with_state(
+            app_state.clone(),
+            auth_middleware,
+        ));
+
+    // Public routes that don't require authentication
+    let public_routes = Router::new()
+        .route("/", get(root))
+        .route("/health", get(health_check));
+
+    // Combine all routes
+    let app = Router::new()
+        .merge(public_routes)
+        .merge(protected_routes)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);

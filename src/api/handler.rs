@@ -3,7 +3,7 @@ use crate::api::query::date_range_query::DateRangeQuery;
 use crate::api::query::pagination_query::PaginationQuery;
 use crate::api::query::query_limit::QueryLimit;
 use crate::core::app_state::AppState;
-use crate::core::speed_data::SpeedData;
+use crate::core::dto::speed_data::SpeedData;
 use crate::database::cache::*;
 use crate::database::crud::*;
 use crate::log_error;

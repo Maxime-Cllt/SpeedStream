@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 use redis::aio::ConnectionManager;
 use tokio::sync::broadcast;
-use crate::core::speed_data::SpeedData;
+use crate::core::dto::speed_data::SpeedData;
 
 #[derive(Clone)]
 #[non_exhaustive]

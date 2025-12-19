@@ -1,5 +1,5 @@
 use crate::api::payload::create_speed_request::CreateSpeedDataRequest;
-use crate::core::speed_data::SpeedData;
+use crate::core::dto::speed_data::SpeedData;
 use sqlx::PgPool;
 use crate::log_error;
 
