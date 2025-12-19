@@ -5,6 +5,30 @@
 http://localhost:8080
 ```
 
+## Authentication
+
+All API endpoints (except `/` and `/health`) require Bearer token authentication.
+
+**Authentication Header Format**
+```
+Authorization: Bearer <your-token>
+```
+
+**Example**
+```bash
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/latest
+```
+
+**Status Codes**
+- `401 Unauthorized` - Missing or invalid token
+- `500 Internal Server Error` - Authentication service error
+
+**Token Validation**
+- Tokens are validated against the database
+- Valid tokens are cached in Redis for improved performance
+- Tokens must be active and not expired
+
 ## Table of Contents
 - [Health Check](#health-check)
 - [Speed Measurements](#speed-measurements)
@@ -46,6 +70,8 @@ Check if the API and database are healthy.
 
 Create a new speed measurement from a sensor.
 
+🔒 **Requires Authentication**: This endpoint requires a valid Bearer token in the Authorization header.
+
 **Request Body**
 ```json
 {
@@ -65,6 +91,7 @@ Create a new speed measurement from a sensor.
 **Example Request**
 ```bash
 curl -X POST http://localhost:8080/api/speeds \
+  -H "Authorization: Bearer your_api_token_here" \
   -H "Content-Type: application/json" \
   -d '{
     "sensor_name": "Highway Sensor 001",
@@ -90,6 +117,8 @@ curl -X POST http://localhost:8080/api/speeds \
 
 Retrieve the last N speed measurements from the database.
 
+🔒 **Requires Authentication**: This endpoint requires a valid Bearer token in the Authorization header.
+
 **Query Parameters**
 | Parameter | Type | Default | Max | Description |
 |-----------|------|---------|-----|-------------|
@@ -97,7 +126,8 @@ Retrieve the last N speed measurements from the database.
 
 **Example Request**
 ```bash
-curl http://localhost:8080/api/speeds?limit=50
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds?limit=50
 ```
 
 **Response**
@@ -141,9 +171,12 @@ curl http://localhost:8080/api/speeds?limit=50
 
 Retrieve the most recent speed measurement. This endpoint uses Redis caching for optimal performance.
 
+🔒 **Requires Authentication**: This endpoint requires a valid Bearer token in the Authorization header.
+
 **Example Request**
 ```bash
-curl http://localhost:8080/api/speeds/latest
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/latest
 ```
 
 **Response**
@@ -174,6 +207,8 @@ curl http://localhost:8080/api/speeds/latest
 
 Retrieve all speed measurements recorded today (from midnight UTC).
 
+🔒 **Requires Authentication**: This endpoint requires a valid Bearer token in the Authorization header.
+
 **Query Parameters**
 | Parameter | Type | Default | Max | Description |
 |-----------|------|---------|-----|-------------|
@@ -181,7 +216,8 @@ Retrieve all speed measurements recorded today (from midnight UTC).
 
 **Example Request**
 ```bash
-curl http://localhost:8080/api/speeds/today?limit=200
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/today?limit=200
 ```
 
 **Response**
@@ -216,6 +252,8 @@ curl http://localhost:8080/api/speeds/today?limit=200
 
 Retrieve speed measurements with pagination support for efficient data browsing.
 
+🔒 **Requires Authentication**: This endpoint requires a valid Bearer token in the Authorization header.
+
 **Query Parameters**
 | Parameter | Type | Default | Max | Description |
 |-----------|------|---------|-----|-------------|
@@ -225,7 +263,8 @@ Retrieve speed measurements with pagination support for efficient data browsing.
 **Example Request**
 ```bash
 # Get records 100-149 (page 2 with 50 items per page)
-curl http://localhost:8080/api/speeds/paginated?offset=100&limit=50
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/paginated?offset=100&limit=50
 ```
 
 **Response**
@@ -252,7 +291,11 @@ const itemsPerPage = 50;
 const currentPage = 1;
 const offset = currentPage * itemsPerPage;
 
-fetch(`http://localhost:8080/api/speeds/paginated?offset=${offset}&limit=${itemsPerPage}`)
+fetch(`http://localhost:8080/api/speeds/paginated?offset=${offset}&limit=${itemsPerPage}`, {
+  headers: {
+    'Authorization': 'Bearer your_api_token_here'
+  }
+})
   .then(response => response.json())
   .then(data => console.log(data));
 ```
@@ -264,6 +307,8 @@ fetch(`http://localhost:8080/api/speeds/paginated?offset=${offset}&limit=${items
 **`GET /api/speeds/range?start_date={start}&end_date={end}`**
 
 Retrieve all speed measurements recorded within a specific date range. This endpoint is useful for generating reports, analyzing historical data, or exporting data for a specific time period.
+
+🔒 **Requires Authentication**: This endpoint requires a valid Bearer token in the Authorization header.
 
 **Query Parameters**
 | Parameter | Type | Required | Description |
@@ -280,16 +325,20 @@ The API accepts dates in two formats:
 
 ```bash
 # Get all speeds for a specific day
-curl "http://localhost:8080/api/speeds/range?start_date=2024-01-15&end_date=2024-01-15"
+curl -H "Authorization: Bearer your_api_token_here" \
+  "http://localhost:8080/api/speeds/range?start_date=2024-01-15&end_date=2024-01-15"
 
 # Get all speeds for a month
-curl "http://localhost:8080/api/speeds/range?start_date=2024-01-01&end_date=2024-01-31"
+curl -H "Authorization: Bearer your_api_token_here" \
+  "http://localhost:8080/api/speeds/range?start_date=2024-01-01&end_date=2024-01-31"
 
 # Get speeds with specific time range
-curl "http://localhost:8080/api/speeds/range?start_date=2024-01-15%2008:00:00&end_date=2024-01-15%2018:00:00"
+curl -H "Authorization: Bearer your_api_token_here" \
+  "http://localhost:8080/api/speeds/range?start_date=2024-01-15%2008:00:00&end_date=2024-01-15%2018:00:00"
 
 # URL encoded version (spaces become %20)
-curl "http://localhost:8080/api/speeds/range?start_date=2024-01-15+08:00:00&end_date=2024-01-15+18:00:00"
+curl -H "Authorization: Bearer your_api_token_here" \
+  "http://localhost:8080/api/speeds/range?start_date=2024-01-15+08:00:00&end_date=2024-01-15+18:00:00"
 ```
 
 **Response**
@@ -368,7 +417,11 @@ async function getSpeedsByDateRange(startDate, endDate) {
     end_date: endDate
   });
 
-  const response = await fetch(`http://localhost:8080/api/speeds/range?${params}`);
+  const response = await fetch(`http://localhost:8080/api/speeds/range?${params}`, {
+    headers: {
+      'Authorization': 'Bearer your_api_token_here'
+    }
+  });
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -404,7 +457,10 @@ def get_speeds_by_date_range(start_date, end_date):
         'start_date': start_date,
         'end_date': end_date
     }
-    response = requests.get('http://localhost:8080/api/speeds/range', params=params)
+    headers = {
+        'Authorization': 'Bearer your_api_token_here'
+    }
+    response = requests.get('http://localhost:8080/api/speeds/range', params=params, headers=headers)
     response.raise_for_status()
     return response.json()
 
@@ -444,16 +500,20 @@ if speeds:
 
 Subscribe to real-time speed measurements using Server-Sent Events (SSE). This endpoint establishes a persistent connection and pushes new speed data to clients immediately as sensors submit measurements.
 
+🔒 **Requires Authentication**: This endpoint requires a valid Bearer token in the Authorization header.
+
 **Use Case**
 Perfect for real-time dashboards, monitoring applications, and live data visualization without the need for polling.
 
 **Connection**
 ```bash
 # Using curl
-curl -N http://localhost:8080/api/speeds/stream
+curl -N -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/stream
 
 # Using httpie
-http --stream http://localhost:8080/api/speeds/stream
+http --stream http://localhost:8080/api/speeds/stream \
+  Authorization:"Bearer your_api_token_here"
 ```
 
 **Event Stream Format**
@@ -468,24 +528,51 @@ data: {"id":124,"sensor_name":"Sensor A","speed":62.1,"lane":0,"created_at":"202
 **JavaScript/TypeScript Example**
 
 ```javascript
-// Establish SSE connection
-const eventSource = new EventSource('http://localhost:8080/api/speeds/stream');
+// NOTE: EventSource doesn't support custom headers, so we use fetch with ReadableStream
+async function connectToSpeedStream(token) {
+  const response = await fetch('http://localhost:8080/api/speeds/stream', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
 
-// Listen for new speed measurements
-eventSource.onmessage = (event) => {
-  const speedData = JSON.parse(event.data);
-  console.log('New speed received:', speedData);
-  // Update your UI here
-};
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
 
-// Handle errors
-eventSource.onerror = (error) => {
-  console.error('SSE connection error:', error);
-  // EventSource automatically reconnects on connection loss
-};
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
 
-// Close connection when done
-// eventSource.close();
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      console.log('Stream ended');
+      break;
+    }
+
+    // Decode and process SSE data
+    const chunk = decoder.decode(value);
+    const lines = chunk.split('\n');
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.substring(6);
+        try {
+          const speedData = JSON.parse(data);
+          console.log('New speed received:', speedData);
+          // Update your UI here
+        } catch (e) {
+          console.error('Failed to parse speed data:', e);
+        }
+      }
+    }
+  }
+}
+
+// Usage
+connectToSpeedStream('your_api_token_here')
+  .catch(error => console.error('Stream error:', error));
 ```
 
 **React Hook Example**
@@ -501,38 +588,70 @@ interface SpeedData {
   created_at: string;
 }
 
-function useSpeedStream() {
+function useSpeedStream(token: string) {
   const [latestSpeed, setLatestSpeed] = useState<SpeedData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8080/api/speeds/stream');
+    let reader: ReadableStreamDefaultReader | null = null;
+    let aborted = false;
 
-    eventSource.onopen = () => {
-      console.log('SSE connected');
-      setIsConnected(true);
-    };
+    async function connect() {
+      try {
+        const response = await fetch('http://localhost:8080/api/speeds/stream', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-    eventSource.onmessage = (event) => {
-      const speedData: SpeedData = JSON.parse(event.data);
-      setLatestSpeed(speedData);
-    };
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-    eventSource.onerror = () => {
-      setIsConnected(false);
-    };
+        setIsConnected(true);
+        reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+
+        while (!aborted) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const speedData: SpeedData = JSON.parse(line.substring(6));
+                setLatestSpeed(speedData);
+              } catch (e) {
+                console.error('Failed to parse speed data:', e);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Stream error:', error);
+        setIsConnected(false);
+      }
+    }
+
+    connect();
 
     return () => {
-      eventSource.close();
+      aborted = true;
+      reader?.cancel();
+      setIsConnected(false);
     };
-  }, []);
+  }, [token]);
 
   return { latestSpeed, isConnected };
 }
 
 // Usage in component
 function Dashboard() {
-  const { latestSpeed, isConnected } = useSpeedStream();
+  const { latestSpeed, isConnected } = useSpeedStream('your_api_token_here');
 
   return (
     <div>
@@ -664,31 +783,38 @@ CORS is enabled for all origins (`permissive` mode). In production, you should r
 ### Complete Workflow Example
 
 ```bash
-# 1. Check API health
+# 1. Check API health (no authentication required)
 curl http://localhost:8080/health
 
 # 2. Create a new speed measurement
 curl -X POST http://localhost:8080/api/speeds \
+  -H "Authorization: Bearer your_api_token_here" \
   -H "Content-Type: application/json" \
   -d '{"sensor_name": "Highway 101 North", "speed": 72.5, "lane": 1}'
 
 # 3. Get the latest measurement (cached in Redis)
-curl http://localhost:8080/api/speeds/latest
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/latest
 
 # 4. Get last 10 measurements
-curl http://localhost:8080/api/speeds?limit=10
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds?limit=10
 
 # 5. Get today's measurements
-curl http://localhost:8080/api/speeds/today
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/today
 
 # 6. Get measurements with pagination
-curl http://localhost:8080/api/speeds/paginated?offset=0&limit=25
+curl -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/paginated?offset=0&limit=25
 
 # 7. Get measurements by date range
-curl "http://localhost:8080/api/speeds/range?start_date=2024-01-01&end_date=2024-01-31"
+curl -H "Authorization: Bearer your_api_token_here" \
+  "http://localhost:8080/api/speeds/range?start_date=2024-01-01&end_date=2024-01-31"
 
 # 8. Subscribe to real-time updates (SSE)
-curl -N http://localhost:8080/api/speeds/stream
+curl -N -H "Authorization: Bearer your_api_token_here" \
+  http://localhost:8080/api/speeds/stream
 # This will keep the connection open and display new measurements as they arrive
 ```
 
@@ -703,6 +829,7 @@ void sendSpeedData(float speed, int lane) {
   HTTPClient http;
   http.begin("http://your-server:8080/api/speeds");
   http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Bearer your_api_token_here");
 
   String payload = "{\"sensor_name\":\"Arduino-001\",\"speed\":" +
                    String(speed) + ",\"lane\":" + String(lane) + "}";
@@ -712,7 +839,8 @@ void sendSpeedData(float speed, int lane) {
   if (httpResponseCode == 201) {
     Serial.println("Speed data sent successfully");
   } else {
-    Serial.println("Error sending data");
+    Serial.print("Error sending data. HTTP code: ");
+    Serial.println(httpResponseCode);
   }
 
   http.end();
