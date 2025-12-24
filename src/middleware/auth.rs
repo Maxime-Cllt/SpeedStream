@@ -1,6 +1,6 @@
 use crate::core::app_state::AppState;
 use crate::database::auth::validate_token;
-use crate::database::cache::{cache_valid_token, is_token_cached};
+use crate::database::cache::{cache_invalid_token, cache_valid_token, is_token_cached, is_token_cached_invalid};
 use crate::log_error;
 use axum::{
     extract::{Request, State},
@@ -55,7 +55,22 @@ pub async fn auth_middleware(
         StatusCode::UNAUTHORIZED
     })?;
 
-    // First, check if token is cached (fast path)
+    // First, check if token is cached as invalid (fastest rejection path)
+    match is_token_cached_invalid(&mut state.redis, token).await {
+        Ok(true) => {
+            log_error!("Token found in invalid cache");
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+        Ok(false) => {
+            // Token not in invalid cache, continue to valid cache check
+        }
+        Err(e) => {
+            log_error!("Redis error while checking invalid token cache: {e}");
+            // Continue to valid token cache check even if Redis fails
+        }
+    }
+
+    // Check if token is cached as valid (fast path)
     match is_token_cached(&mut state.redis, token).await {
         Ok(true) => {
             // Token is cached and valid, proceed with request
@@ -83,6 +98,10 @@ pub async fn auth_middleware(
             Ok(next.run(request).await)
         }
         Ok(false) => {
+            // Token is invalid, cache it to prevent repeated DB queries
+            if let Err(e) = cache_invalid_token(&mut state.redis, token).await {
+                log_error!("Failed to cache invalid token: {e}");
+            }
             log_error!("Invalid or inactive token");
             Err(StatusCode::UNAUTHORIZED)
         }

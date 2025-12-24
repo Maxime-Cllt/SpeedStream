@@ -10,8 +10,24 @@ use crate::log_error;
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::Json};
 use axum::response::sse::{Event, Sse};
+use axum::response::{IntoResponse, Response};
+use axum::http::{header, HeaderValue};
 use futures_util::stream::Stream;
 use std::convert::Infallible;
+
+/// Adds Cache-Control headers to a JSON response
+#[inline]
+fn with_cache_headers<T>(data: Json<T>, max_age: u32) -> Response
+where
+    T: serde::Serialize,
+{
+    let mut response = data.into_response();
+    response.headers_mut().insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_str(&format!("public, max-age={}", max_age)).unwrap(),
+    );
+    response
+}
 
 /// Handler functions for the API
 #[inline]
@@ -88,10 +104,10 @@ pub async fn get_speed_pagination(
 pub async fn get_speed_today(
     State(state): State<AppState>,
     Query(params): Query<PaginationQuery>,
-) -> Result<Json<Vec<SpeedData>>, StatusCode> {
+) -> Result<Response, StatusCode> {
     let limit: u16 = u16::try_from(params.limit.unwrap_or(100).min(1000)).unwrap_or(100);
     match fetch_speed_data_today(&state.db, limit).await {
-        Ok(data) => Ok(Json(data)),
+        Ok(data) => Ok(with_cache_headers(Json(data), 60)), // Cache for 60 seconds
         Err(e) => {
             log_error!("Error fetching today's speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -103,11 +119,11 @@ pub async fn get_speed_today(
 #[inline]
 pub async fn get_last_speed(
     State(mut state): State<AppState>,
-) -> Result<Json<SpeedData>, StatusCode> {
+) -> Result<Response, StatusCode> {
     // Try to get from cache first
     match get_last_speed_from_cache(&mut state.redis).await {
         Ok(Some(cached_data)) => {
-            return Ok(Json(cached_data));
+            return Ok(with_cache_headers(Json(cached_data), 5)); // Cache for 5 seconds
         }
         _ => {
             // Cache miss or error, proceed to fetch from database
@@ -121,7 +137,7 @@ pub async fn get_last_speed(
             if let Err(e) = set_last_speed_in_cache(&mut state.redis, &data).await {
                 log_error!("Failed to update cache: {e:?}");
             }
-            Ok(Json(data))
+            Ok(with_cache_headers(Json(data), 5)) // Cache for 5 seconds
         }
         Err(e) => {
             log_error!("Error fetching last speed data: {e:?}");
@@ -141,7 +157,7 @@ pub async fn root() -> &'static str {
 pub async fn get_speed_by_date_range(
     State(state): State<AppState>,
     Query(params): Query<DateRangeQuery>,
-) -> Result<Json<Vec<SpeedData>>, StatusCode> {
+) -> Result<Response, StatusCode> {
     // Parse the start and end dates
     let start_date = match params.parse_start_date() {
         Ok(date) => date,
@@ -161,7 +177,7 @@ pub async fn get_speed_by_date_range(
 
     // Fetch data from database
     match fetch_speed_data_by_date_range(&state.db, start_date, end_date).await {
-        Ok(data) => Ok(Json(data)),
+        Ok(data) => Ok(with_cache_headers(Json(data), 3600)), // Cache for 1 hour (historical data)
         Err(e) => {
             log_error!("Error fetching speed data by date range: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
