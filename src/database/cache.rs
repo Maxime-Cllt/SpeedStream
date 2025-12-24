@@ -100,7 +100,7 @@ pub async fn cache_valid_token(
 ) -> Result<(), redis::RedisError> {
     let key = generate_token_cache_key(token);
     let _: () = redis
-        .set_ex(&key, "1", TOKEN_CACHE_TTL as u64)
+        .set_ex(&key, "1", u64::from(TOKEN_CACHE_TTL))
         .await
         .map_err(|e| {
             log_error!("Failed to cache valid token: {e}");
@@ -145,7 +145,7 @@ pub async fn cache_invalid_token(
 ) -> Result<(), redis::RedisError> {
     let key = format!("{NEGATIVE_TOKEN_CACHE_PREFIX}{token}");
     let _: () = redis
-        .set_ex(&key, "1", NEGATIVE_TOKEN_CACHE_TTL as u64)
+        .set_ex(&key, "1", u64::from(NEGATIVE_TOKEN_CACHE_TTL))
         .await
         .map_err(|e| {
             log_error!("Failed to cache invalid token: {e}");

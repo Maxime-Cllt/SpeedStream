@@ -104,11 +104,11 @@ fn test_token_length_variations() {
     );
     assert_eq!(
         extract_bearer_token(&medium_header),
-        Some(&medium_token as &str)
+        Some(medium_token)
     );
     assert_eq!(
         extract_bearer_token(&long_header),
-        Some(&long_token as &str)
+        Some(long_token.as_str())
     );
 
     // All should generate valid cache keys
@@ -117,7 +117,7 @@ fn test_token_length_variations() {
         format!("speedstream:token:{}", short_token)
     );
     assert_eq!(
-        generate_token_cache_key(&medium_token),
+        generate_token_cache_key(medium_token),
         format!("speedstream:token:{}", medium_token)
     );
     assert_eq!(
