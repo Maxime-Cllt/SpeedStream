@@ -25,11 +25,11 @@ fn test_token_extraction_flow() {
 fn test_invalid_token_extraction_flow() {
     // Test with invalid auth headers
     let invalid_headers = vec![
-        "Basic mytoken",           // Wrong scheme
-        "Bearer",                   // Missing token
-        "bearer mytoken",          // Wrong case
-        "mytoken",                 // No scheme
-        "",                        // Empty
+        "Basic mytoken",  // Wrong scheme
+        "Bearer",         // Missing token
+        "bearer mytoken", // Wrong case
+        "mytoken",        // No scheme
+        "",               // Empty
     ];
 
     for header in invalid_headers {
@@ -98,14 +98,8 @@ fn test_token_length_variations() {
     let medium_header = format!("Bearer {}", medium_token);
     let long_header = format!("Bearer {}", &long_token);
 
-    assert_eq!(
-        extract_bearer_token(&short_header),
-        Some(short_token)
-    );
-    assert_eq!(
-        extract_bearer_token(&medium_header),
-        Some(medium_token)
-    );
+    assert_eq!(extract_bearer_token(&short_header), Some(short_token));
+    assert_eq!(extract_bearer_token(&medium_header), Some(medium_token));
     assert_eq!(
         extract_bearer_token(&long_header),
         Some(long_token.as_str())

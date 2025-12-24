@@ -1,12 +1,13 @@
 use serde::{Deserialize, Deserializer, Serialize};
-use sqlx::postgres::{PgTypeInfo, PgValueRef};
 use sqlx::Type;
-use sqlx::{error::BoxDynError, Decode, Postgres};
+use sqlx::postgres::{PgTypeInfo, PgValueRef};
+use sqlx::{Decode, Postgres, error::BoxDynError};
 
-/// Represent the lane of a vehicle in a two-lane road.
-/// /// The `Lane` enum has two variants:
-/// /// - `Left`: Represents the left lane. (0)
-/// /// - `Right`: Represents the right lane. (1)
+/// Represents the lane of a vehicle in a two-lane road.
+///
+/// Variants:
+/// - `Left`: Represents the left lane (value: 0)
+/// - `Right`: Represents the right lane (value: 1)
 #[derive(Debug, PartialEq, Clone, Copy, Eq)]
 #[repr(u8)]
 pub enum Lane {
@@ -14,7 +15,7 @@ pub enum Lane {
     Right = 1,
 }
 
-/// Implementing the `Deserialize` trait for `Lane` to allow it to be deserialized from JSON or other formats.
+/// Deserializes `Lane` from u8 values (0 = Left, 1 = Right)
 impl<'de> Deserialize<'de> for Lane {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -29,13 +30,13 @@ impl<'de> Deserialize<'de> for Lane {
     }
 }
 
-/// Implementing the `Serialize` trait for `Lane` to allow it to be serialized to JSON or other formats.
+/// Serializes `Lane` to u8 values (0 = Left, 1 = Right)
 impl Serialize for Lane {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        let value:u8 = match self {
+        let value: u8 = match self {
             Self::Left => 0_u8,
             Self::Right => 1_u8,
         };
@@ -43,7 +44,7 @@ impl Serialize for Lane {
     }
 }
 
-/// Implementing the `Decode` trait for `Lane` to allow it to be decoded from a `PostgreSQL` value.
+/// Decodes `Lane` from PostgreSQL integer values
 impl<'r> Decode<'r, Postgres> for Lane {
     fn decode(value: PgValueRef<'r>) -> Result<Self, BoxDynError> {
         let v = <i32 as Decode<Postgres>>::decode(value)?;
@@ -51,14 +52,14 @@ impl<'r> Decode<'r, Postgres> for Lane {
     }
 }
 
-/// Implementing the `Type` trait for `Lane` to specify its `PostgreSQL` type information.
+/// Maps `Lane` to PostgreSQL INT4 type
 impl Type<Postgres> for Lane {
     fn type_info() -> PgTypeInfo {
         <i32 as Type<Postgres>>::type_info()
     }
 }
 
-/// Implementing `TryFrom<i32>` to convert an integer to a `Lane`.
+/// Converts i32 to `Lane` (0 = Left, 1 = Right, other values = error)
 impl TryFrom<i32> for Lane {
     type Error = &'static str;
 

@@ -1,7 +1,6 @@
 use axum::{
-    middleware,
+    Router, middleware,
     routing::{get, post},
-    Router,
 };
 use redis::Client;
 use speed_stream::api::handler::{
@@ -19,7 +18,6 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // Load environment variables from .env file if present from path
     let dotenv_path = std::env::current_dir()?.join(".env");
     dotenvy::from_path(dotenv_path).ok();
@@ -49,7 +47,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(DATABASE_URL.as_str())
         .await?;
 
-    println!("Connected to Postgres database (pool: {min_connections}-{max_connections} connections)");
+    println!(
+        "Connected to Postgres database (pool: {min_connections}-{max_connections} connections)"
+    );
 
     // Initialize Redis connection
     let redis_client = Client::open(REDIS_URL.as_str())?;
@@ -58,8 +58,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Connected to Redis cache");
 
     // Create broadcast channel for real-time speed notifications
-    // Channel capacity of 100 means it can hold up to 100 messages before dropping oldest
-    let (broadcast_tx, _) = tokio::sync::broadcast::channel(100);
+    // Channel capacity of 1000 means it can hold up to 1000 messages before dropping oldest
+    // This prevents message loss during traffic spikes while maintaining reasonable memory usage (~100KB buffer)
+    let (broadcast_tx, _) = tokio::sync::broadcast::channel(1000);
 
     let app_state = AppState::new(pool, redis_manager, broadcast_tx);
 

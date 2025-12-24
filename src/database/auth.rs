@@ -2,9 +2,7 @@ use crate::log_error;
 use sqlx::{PgPool, Row};
 
 /// Validates if a token exists and is active in the database
-#[inline]
 pub async fn validate_token(db: &PgPool, token: &str) -> Result<bool, sqlx::Error> {
-    
     // Query the database for the token
     let result = sqlx::query(
         r#"

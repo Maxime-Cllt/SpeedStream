@@ -1,6 +1,8 @@
 use crate::core::app_state::AppState;
 use crate::database::auth::validate_token;
-use crate::database::cache::{cache_invalid_token, cache_valid_token, is_token_cached, is_token_cached_invalid};
+use crate::database::cache::{
+    cache_invalid_token, cache_valid_token, is_token_cached, is_token_cached_invalid,
+};
 use crate::log_error;
 use axum::{
     extract::{Request, State},

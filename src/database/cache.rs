@@ -1,14 +1,14 @@
 use crate::core::dto::speed_data::SpeedData;
 use crate::log_error;
-use redis::aio::ConnectionManager;
 use redis::AsyncCommands;
+use redis::aio::ConnectionManager;
 
 const LAST_SPEED_KEY: &str = "speedstream:last_speed";
 const CACHE_TTL: i64 = 3600; // 1 hour TTL
 const TOKEN_CACHE_PREFIX: &str = "speedstream:token:";
 const TOKEN_CACHE_TTL: u32 = 86400; // 24 hours TTL for valid tokens
 const NEGATIVE_TOKEN_CACHE_PREFIX: &str = "speedstream:invalid_token:";
-const NEGATIVE_TOKEN_CACHE_TTL: u32 = 300; // 5 minutes TTL for invalid tokens
+const NEGATIVE_TOKEN_CACHE_TTL: u32 = 60; // 1 minute TTL for invalid tokens
 
 /// Generates a cache key for a token
 ///
@@ -18,13 +18,20 @@ pub fn generate_token_cache_key(token: &str) -> String {
     format!("{TOKEN_CACHE_PREFIX}{token}")
 }
 
-/// Retrieves the last speed data from Redis cache
+/// Generates a cache key for an invalid token
+///
+/// This function is public for testing purposes
 #[inline]
+pub fn generate_invalid_token_cache_key(token: &str) -> String {
+    format!("{NEGATIVE_TOKEN_CACHE_PREFIX}{token}")
+}
+
+/// Retrieves the last speed data from Redis cache
 pub async fn get_last_speed_from_cache(
     redis: &mut ConnectionManager,
 ) -> Result<Option<SpeedData>, redis::RedisError> {
     let cached: Option<String> = redis.get(LAST_SPEED_KEY).await.map_err(|e| {
-        log_error!("Failed to get last speed from cache {e}");
+        log_error!("Failed to get last speed from cache: {e}");
         e
     })?;
 
@@ -32,7 +39,7 @@ pub async fn get_last_speed_from_cache(
         Some(json_str) => match serde_json::from_str::<SpeedData>(&json_str) {
             Ok(data) => Ok(Some(data)),
             Err(e) => {
-                log_error!("Failed to deserialize speed data from cache {e}");
+                log_error!("Failed to deserialize speed data from cache: {e}");
                 Ok(None)
             }
         },
@@ -41,13 +48,12 @@ pub async fn get_last_speed_from_cache(
 }
 
 /// Sets the last speed data in Redis cache
-#[inline]
 pub async fn set_last_speed_in_cache(
     redis: &mut ConnectionManager,
     speed_data: &SpeedData,
 ) -> Result<(), redis::RedisError> {
     let json_str = serde_json::to_string(speed_data).map_err(|e| {
-        log_error!("Failed to serialize speed data for cache{e} ");
+        log_error!("Failed to serialize speed data for cache: {e}");
         redis::RedisError::from(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             format!("Serialization error: {e}"),
@@ -58,7 +64,7 @@ pub async fn set_last_speed_in_cache(
         .set_ex(LAST_SPEED_KEY, json_str, CACHE_TTL as u64)
         .await
         .map_err(|e| {
-            log_error!("Failed to set last speed in cache {e}");
+            log_error!("Failed to set last speed in cache: {e}");
             e
         })?;
 
@@ -66,12 +72,11 @@ pub async fn set_last_speed_in_cache(
 }
 
 /// Invalidates the last speed cache entry
-#[inline]
 pub async fn invalidate_last_speed_cache(
     redis: &mut ConnectionManager,
 ) -> Result<(), redis::RedisError> {
     let _: () = redis.del(LAST_SPEED_KEY).await.map_err(|e| {
-        log_error!("Failed to invalidate last speed cache {e}");
+        log_error!("Failed to invalidate last speed cache: {e}");
         e
     })?;
 
@@ -79,7 +84,6 @@ pub async fn invalidate_last_speed_cache(
 }
 
 /// Checks if a token is valid in the cache
-#[inline]
 pub async fn is_token_cached(
     redis: &mut ConnectionManager,
     token: &str,
@@ -93,7 +97,6 @@ pub async fn is_token_cached(
 }
 
 /// Caches a valid token with TTL
-#[inline]
 pub async fn cache_valid_token(
     redis: &mut ConnectionManager,
     token: &str,
@@ -110,7 +113,6 @@ pub async fn cache_valid_token(
 }
 
 /// Invalidates a cached token
-#[inline]
 pub async fn invalidate_token_cache(
     redis: &mut ConnectionManager,
     token: &str,
@@ -124,12 +126,11 @@ pub async fn invalidate_token_cache(
 }
 
 /// Checks if a token is cached as invalid
-#[inline]
 pub async fn is_token_cached_invalid(
     redis: &mut ConnectionManager,
     token: &str,
 ) -> Result<bool, redis::RedisError> {
-    let key = format!("{NEGATIVE_TOKEN_CACHE_PREFIX}{token}");
+    let key = generate_invalid_token_cache_key(token);
     let exists: bool = redis.exists(&key).await.map_err(|e| {
         log_error!("Failed to check invalid token cache: {e}");
         e
@@ -138,12 +139,11 @@ pub async fn is_token_cached_invalid(
 }
 
 /// Caches an invalid token with short TTL
-#[inline]
 pub async fn cache_invalid_token(
     redis: &mut ConnectionManager,
     token: &str,
 ) -> Result<(), redis::RedisError> {
-    let key = format!("{NEGATIVE_TOKEN_CACHE_PREFIX}{token}");
+    let key = generate_invalid_token_cache_key(token);
     let _: () = redis
         .set_ex(&key, "1", u64::from(NEGATIVE_TOKEN_CACHE_TTL))
         .await

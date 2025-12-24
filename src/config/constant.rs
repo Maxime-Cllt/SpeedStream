@@ -3,7 +3,8 @@ use std::sync::LazyLock;
 /// Database connection URL
 pub static DATABASE_URL: LazyLock<String> = LazyLock::new(|| {
     let user = std::env::var("POSTGRES_USER").unwrap_or_else(|_| "speedstream".to_string());
-    let password = std::env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "speedstream123".to_string());
+    let password =
+        std::env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "speedstream123".to_string());
     let host = std::env::var("POSTGRES_HOST").unwrap_or_else(|_| "postgres".to_string());
     let port = std::env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string());
     let db = std::env::var("POSTGRES_DB").unwrap_or_else(|_| "speedstream_db".to_string());
