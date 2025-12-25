@@ -139,7 +139,7 @@ macro_rules! log_debug {
 #[macro_export]
 macro_rules! log_trace {
     ($($arg:tt)*) => {
-        $crate::tracing::logger::Logger::trace(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::telemetry::tracing::logger::Logger::trace(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };
@@ -148,7 +148,7 @@ macro_rules! log_trace {
 #[macro_export]
 macro_rules! log_fatal {
     ($($arg:tt)*) => {
-        $crate::tracing::logger::Logger::fatal(&format!($($arg)*)).unwrap_or_else(|e| {
+        $crate::telemetry::tracing::logger::Logger::fatal(&format!($($arg)*)).unwrap_or_else(|e| {
             eprintln!("Failed to write to log file: {}", e);
         });
     };

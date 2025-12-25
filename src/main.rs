@@ -1,6 +1,6 @@
 use axum::{
+    Router, middleware,
     routing::{get, post},
-    Router,
 };
 use redis::Client;
 use speed_stream::api::handler::{
@@ -9,6 +9,7 @@ use speed_stream::api::handler::{
 };
 use speed_stream::config::constant::{DATABASE_URL, REDIS_URL};
 use speed_stream::core::app_state::AppState;
+use speed_stream::middleware::auth::auth_middleware;
 use speed_stream::telemetry::tracing::log_level::LogLevel;
 use speed_stream::telemetry::tracing::logger::Logger;
 use sqlx::postgres::PgPoolOptions;
@@ -17,7 +18,6 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // Load environment variables from .env file if present from path
     let dotenv_path = std::env::current_dir()?.join(".env");
     dotenvy::from_path(dotenv_path).ok();
@@ -27,13 +27,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a logger that writes to "app.log" with minimum level of Info
     Logger::init("app.log", LogLevel::Trace)?;
 
+    // Configure database connection pool with environment variables
+    let max_connections = std::env::var("DB_MAX_CONNECTIONS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(30);
+
+    let min_connections = std::env::var("DB_MIN_CONNECTIONS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(5);
+
     let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .min_connections(1)
+        .max_connections(max_connections)
+        .min_connections(min_connections)
+        .acquire_timeout(std::time::Duration::from_secs(5))
+        .idle_timeout(std::time::Duration::from_secs(600))
+        .max_lifetime(std::time::Duration::from_secs(1800))
         .connect(DATABASE_URL.as_str())
         .await?;
 
-    println!("Connected to Postgres database");
+    println!(
+        "Connected to Postgres database (pool: {min_connections}-{max_connections} connections)"
+    );
 
     // Initialize Redis connection
     let redis_client = Client::open(REDIS_URL.as_str())?;
@@ -42,14 +58,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Connected to Redis cache");
 
     // Create broadcast channel for real-time speed notifications
-    // Channel capacity of 100 means it can hold up to 100 messages before dropping oldest
-    let (broadcast_tx, _) = tokio::sync::broadcast::channel(100);
+    // Channel capacity of 1000 means it can hold up to 1000 messages before dropping oldest
+    // This prevents message loss during traffic spikes while maintaining reasonable memory usage (~100KB buffer)
+    let (broadcast_tx, _) = tokio::sync::broadcast::channel(1000);
 
     let app_state = AppState::new(pool, redis_manager, broadcast_tx);
 
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/health", get(health_check))
+    // Protected routes that require Bearer token authentication
+    let protected_routes = Router::new()
         // RESTful endpoints for speed measurements
         .route("/api/speeds", post(create_speed))
         .route("/api/speeds", get(get_last_n_speed))
@@ -59,6 +75,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/speeds/range", get(get_speed_by_date_range))
         // Real-time SSE endpoint for speed notifications
         .route("/api/speeds/stream", get(speed_stream))
+        .route_layer(middleware::from_fn_with_state(
+            app_state.clone(),
+            auth_middleware,
+        ));
+
+    // Public routes that don't require authentication
+    let public_routes = Router::new()
+        .route("/", get(root))
+        .route("/health", get(health_check));
+
+    // Combine all routes
+    let app = Router::new()
+        .merge(public_routes)
+        .merge(protected_routes)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);

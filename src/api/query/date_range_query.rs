@@ -9,17 +9,23 @@ pub struct DateRangeQuery {
 }
 
 impl DateRangeQuery {
-    /// Parse a date string that can be either "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
-    /// Returns a DateTime<Utc>
-    pub fn parse_date(date_str: &str) -> Result<DateTime<Utc>, String> {
+    /// Internal helper to parse date with optional time component
+    ///
+    /// If the date string includes time, uses that time exactly.
+    /// If only a date is provided, uses the default_time tuple (hour, minute, second).
+    fn parse_date_internal(
+        date_str: &str,
+        default_time: (u32, u32, u32),
+    ) -> Result<DateTime<Utc>, String> {
         // Try parsing as full datetime first (YYYY-MM-DD HH:MM:SS)
         if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%d %H:%M:%S") {
             return Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc));
         }
 
-        // Try parsing as date only (YYYY-MM-DD) - defaults to 00:00:00
+        // Try parsing as date only (YYYY-MM-DD)
         if let Ok(naive_date) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
-            let naive_dt = naive_date.and_hms_opt(0, 0, 0).unwrap();
+            let (h, m, s) = default_time;
+            let naive_dt = naive_date.and_hms_opt(h, m, s).unwrap();
             return Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc));
         }
 
@@ -30,29 +36,20 @@ impl DateRangeQuery {
         ))
     }
 
-    /// Parse the start_date field
-    pub fn parse_start_date(&self) -> Result<DateTime<Utc>, String> {
-        Self::parse_date(&self.start_date)
+    /// Parse a date string that can be either "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
+    /// Returns a DateTime<Utc>, defaulting to 00:00:00 if only date is provided
+    pub fn parse_date(date_str: &str) -> Result<DateTime<Utc>, String> {
+        Self::parse_date_internal(date_str, (0, 0, 0))
     }
 
-    /// Parse the end_date field
-    /// If only a date is provided (no time), defaults to 23:59:59 to include the entire day
+    /// Parse the start_date field (defaults to 00:00:00)
+    pub fn parse_start_date(&self) -> Result<DateTime<Utc>, String> {
+        Self::parse_date_internal(&self.start_date, (0, 0, 0))
+    }
+
+    /// Parse the end_date field (defaults to 23:59:59 to include entire day)
     pub fn parse_end_date(&self) -> Result<DateTime<Utc>, String> {
-        // Try parsing as full datetime first
-        if let Ok(naive_dt) = NaiveDateTime::parse_from_str(&self.end_date, "%Y-%m-%d %H:%M:%S") {
-            return Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc));
-        }
-
-        // If only date, set to end of day (23:59:59)
-        if let Ok(naive_date) = NaiveDate::parse_from_str(&self.end_date, "%Y-%m-%d") {
-            let naive_dt = naive_date.and_hms_opt(23, 59, 59).unwrap();
-            return Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc));
-        }
-
-        Err(format!(
-            "Invalid date format: '{}'. Expected 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'",
-            &self.end_date
-        ))
+        Self::parse_date_internal(&self.end_date, (23, 59, 59))
     }
 }
 

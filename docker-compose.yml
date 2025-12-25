@@ -42,7 +42,7 @@ services:
 
   # Rust API Application
   api:
-    image: maxcllt/speedstream-api:1.1.0
+    image: maxcllt/speedstream-api:1.1.1
     container_name: speedstream-api
     restart: unless-stopped
     ports:

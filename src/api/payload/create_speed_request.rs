@@ -24,7 +24,10 @@ mod tests {
         };
 
         let serialized = serde_json::to_string(&request).unwrap();
-        assert_eq!(serialized, r#"{"sensor_name":"Sensor A","speed":60.0,"lane":2}"#);
+        assert_eq!(
+            serialized,
+            r#"{"sensor_name":"Sensor A","speed":60.0,"lane":2}"#
+        );
 
         let deserialized: CreateSpeedDataRequest = serde_json::from_str(&serialized).unwrap();
         assert_eq!(deserialized.speed, 60.0);

@@ -1,6 +1,6 @@
 [package]
 name = "SpeedStream"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2024"
 authors = ["Maxime-Cllt"]
 description = "A high-performance streaming server for real-time data processing"

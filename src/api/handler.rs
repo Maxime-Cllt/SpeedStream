@@ -3,18 +3,33 @@ use crate::api::query::date_range_query::DateRangeQuery;
 use crate::api::query::pagination_query::PaginationQuery;
 use crate::api::query::query_limit::QueryLimit;
 use crate::core::app_state::AppState;
-use crate::core::speed_data::SpeedData;
+use crate::core::dto::speed_data::SpeedData;
 use crate::database::cache::*;
 use crate::database::crud::*;
 use crate::log_error;
 use axum::extract::Query;
-use axum::{extract::State, http::StatusCode, response::Json};
+use axum::http::{HeaderValue, header};
 use axum::response::sse::{Event, Sse};
+use axum::response::{IntoResponse, Response};
+use axum::{extract::State, http::StatusCode, response::Json};
 use futures_util::stream::Stream;
 use std::convert::Infallible;
 
-/// Handler functions for the API
+/// Adds Cache-Control headers to a JSON response
 #[inline]
+fn with_cache_headers<T>(data: Json<T>, max_age: u32) -> Response
+where
+    T: serde::Serialize,
+{
+    let mut response = data.into_response();
+    response.headers_mut().insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_str(&format!("public, max-age={}", max_age)).unwrap(),
+    );
+    response
+}
+
+/// Handler functions for the API
 pub async fn health_check(State(state): State<AppState>) -> Result<Json<String>, StatusCode> {
     match sqlx::query("SELECT 1").fetch_one(&state.db).await {
         Ok(_) => {
@@ -26,7 +41,6 @@ pub async fn health_check(State(state): State<AppState>) -> Result<Json<String>,
 }
 
 /// Handler to create speed data from Arduino (with cache update and real-time broadcast)
-#[inline]
 pub async fn create_speed(
     State(mut state): State<AppState>,
     Json(payload): Json<CreateSpeedDataRequest>,
@@ -49,7 +63,6 @@ pub async fn create_speed(
 }
 
 // Retrieves the last n speed data entries from the database
-#[inline]
 pub async fn get_last_n_speed(
     State(state): State<AppState>,
     Query(params): Query<QueryLimit>,
@@ -66,12 +79,11 @@ pub async fn get_last_n_speed(
 }
 
 /// Retrieves speed data with pagination support
-#[inline]
 pub async fn get_speed_pagination(
     State(state): State<AppState>,
     Query(params): Query<PaginationQuery>,
 ) -> Result<Json<Vec<SpeedData>>, StatusCode> {
-    let offset: u32 = params.offest.unwrap_or(0);
+    let offset: u32 = params.get_offset().unwrap_or(0);
     let limit: u32 = params.limit.unwrap_or(100).min(1000);
 
     match fetch_speed_data_with_pagination(&state.db, offset, limit).await {
@@ -84,14 +96,16 @@ pub async fn get_speed_pagination(
 }
 
 /// Retrieves all speed data entries inserted today
-#[inline]
 pub async fn get_speed_today(
     State(state): State<AppState>,
     Query(params): Query<PaginationQuery>,
-) -> Result<Json<Vec<SpeedData>>, StatusCode> {
-    let limit: u16 = u16::try_from(params.limit.unwrap_or(100).min(1000)).unwrap_or(100);
+) -> Result<Response, StatusCode> {
+    // Get limit as u32 and clamp to valid range (0-1000)
+    let limit_u32 = params.limit.unwrap_or(100).min(1000);
+    // Safe conversion to u16: min(1000) ensures value fits in u16::MAX (65535)
+    let limit: u16 = limit_u32 as u16;
     match fetch_speed_data_today(&state.db, limit).await {
-        Ok(data) => Ok(Json(data)),
+        Ok(data) => Ok(with_cache_headers(Json(data), 60)), // Cache for 60 seconds
         Err(e) => {
             log_error!("Error fetching today's speed data: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -100,14 +114,11 @@ pub async fn get_speed_today(
 }
 
 /// Retrieves the last speed data entry (with Redis caching)
-#[inline]
-pub async fn get_last_speed(
-    State(mut state): State<AppState>,
-) -> Result<Json<SpeedData>, StatusCode> {
+pub async fn get_last_speed(State(mut state): State<AppState>) -> Result<Response, StatusCode> {
     // Try to get from cache first
     match get_last_speed_from_cache(&mut state.redis).await {
         Ok(Some(cached_data)) => {
-            return Ok(Json(cached_data));
+            return Ok(with_cache_headers(Json(cached_data), 5)); // Cache for 5 seconds
         }
         _ => {
             // Cache miss or error, proceed to fetch from database
@@ -121,7 +132,7 @@ pub async fn get_last_speed(
             if let Err(e) = set_last_speed_in_cache(&mut state.redis, &data).await {
                 log_error!("Failed to update cache: {e:?}");
             }
-            Ok(Json(data))
+            Ok(with_cache_headers(Json(data), 5)) // Cache for 5 seconds
         }
         Err(e) => {
             log_error!("Error fetching last speed data: {e:?}");
@@ -131,17 +142,15 @@ pub async fn get_last_speed(
 }
 
 /// Root handler for the API
-#[inline]
 pub async fn root() -> &'static str {
     "Sensor Data API - Running with Axum & Postgres - v1.1.0"
 }
 
 /// Retrieves all speed data entries within a specified date range
-#[inline]
 pub async fn get_speed_by_date_range(
     State(state): State<AppState>,
     Query(params): Query<DateRangeQuery>,
-) -> Result<Json<Vec<SpeedData>>, StatusCode> {
+) -> Result<Response, StatusCode> {
     // Parse the start and end dates
     let start_date = match params.parse_start_date() {
         Ok(date) => date,
@@ -161,7 +170,7 @@ pub async fn get_speed_by_date_range(
 
     // Fetch data from database
     match fetch_speed_data_by_date_range(&state.db, start_date, end_date).await {
-        Ok(data) => Ok(Json(data)),
+        Ok(data) => Ok(with_cache_headers(Json(data), 3600)), // Cache for 1 hour (historical data)
         Err(e) => {
             log_error!("Error fetching speed data by date range: {e:?}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -171,7 +180,6 @@ pub async fn get_speed_by_date_range(
 
 /// Server-Sent Events endpoint for real-time speed notifications
 /// Clients can connect to this endpoint to receive speed updates as they happen
-#[inline]
 pub async fn speed_stream(
     State(state): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {

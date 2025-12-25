@@ -1,2 +1,3 @@
-pub mod crud;
+pub mod auth;
 pub mod cache;
+pub mod crud;
