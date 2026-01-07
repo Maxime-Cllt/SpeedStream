@@ -1,10 +1,10 @@
 use crate::core::lane::Lane;
+use crate::database::types::FromPostgresRow;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
 /// Represents speed data collected from a sensor on track
-#[derive(Debug, Clone, Deserialize, Serialize, FromRow)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[non_exhaustive]
 #[must_use]
 pub struct SpeedData {
@@ -32,6 +32,21 @@ impl SpeedData {
             lane,
             created_at,
         }
+    }
+}
+
+impl FromPostgresRow for SpeedData {
+    fn from_row(row: &tokio_postgres::Row) -> Result<Self, crate::database::types::DbError> {
+        use crate::database::types::DbError;
+
+        Ok(SpeedData {
+            id: row.try_get("id").map_err(DbError::from)?,
+            sensor_name: row.try_get("sensor_name").map_err(DbError::from)?,
+            speed: row.try_get("speed").map_err(DbError::from)?,
+            lane: Lane::try_from(row.try_get::<_, i32>("lane").map_err(DbError::from)?)
+                .map_err(|e| DbError::RowParsing(format!("Invalid lane value: {}", e)))?,
+            created_at: row.try_get("created_at").map_err(DbError::from)?,
+        })
     }
 }
 

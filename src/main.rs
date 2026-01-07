@@ -12,7 +12,6 @@ use speed_stream::core::app_state::AppState;
 use speed_stream::middleware::auth::auth_middleware;
 use speed_stream::telemetry::tracing::log_level::LogLevel;
 use speed_stream::telemetry::tracing::logger::Logger;
-use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -27,28 +26,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a logger that writes to "app.log" with minimum level of Info
     Logger::init("app.log", LogLevel::Trace)?;
 
-    // Configure database connection pool with environment variables
-    let max_connections = std::env::var("DB_MAX_CONNECTIONS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(30);
-
-    let min_connections = std::env::var("DB_MIN_CONNECTIONS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(5);
-
-    let pool = PgPoolOptions::new()
-        .max_connections(max_connections)
-        .min_connections(min_connections)
-        .acquire_timeout(std::time::Duration::from_secs(5))
-        .idle_timeout(std::time::Duration::from_secs(600))
-        .max_lifetime(std::time::Duration::from_secs(1800))
-        .connect(DATABASE_URL.as_str())
-        .await?;
+    // Configure database connection pool (bb8 with tokio-postgres)
+    let pool = speed_stream::database::pool::create_pool(DATABASE_URL.as_str()).await?;
 
     println!(
-        "Connected to Postgres database (pool: {min_connections}-{max_connections} connections)"
+        "Connected to Postgres database (pool: 5-20 connections with bb8)"
     );
 
     // Initialize Redis connection

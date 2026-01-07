@@ -1,12 +1,12 @@
 use crate::core::dto::speed_data::SpeedData;
+use crate::database::pool::DbPool;
 use redis::aio::ConnectionManager;
-use sqlx::PgPool;
 use tokio::sync::broadcast;
 
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct AppState {
-    pub db: PgPool,
+    pub db: DbPool,
     pub redis: ConnectionManager,
     pub broadcast_tx: broadcast::Sender<SpeedData>,
 }
@@ -16,7 +16,7 @@ impl AppState {
     #[inline]
     #[must_use]
     pub fn new(
-        db: PgPool,
+        db: DbPool,
         redis: ConnectionManager,
         broadcast_tx: broadcast::Sender<SpeedData>,
     ) -> Self {

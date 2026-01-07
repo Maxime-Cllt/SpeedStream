@@ -31,7 +31,12 @@ where
 
 /// Handler functions for the API
 pub async fn health_check(State(state): State<AppState>) -> Result<Json<String>, StatusCode> {
-    match sqlx::query("SELECT 1").fetch_one(&state.db).await {
+    let conn = match state.db.get().await {
+        Ok(conn) => conn,
+        Err(_) => return Err(StatusCode::SERVICE_UNAVAILABLE),
+    };
+
+    match conn.query("SELECT 1", &[]).await {
         Ok(_) => {
             let today: String = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
             Ok(Json(format!("API is healthy! Current time: {today}")))
