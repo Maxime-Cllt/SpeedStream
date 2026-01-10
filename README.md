@@ -55,19 +55,29 @@ graph TD
 %% Nodes
     A[Arduino Sensor]
     B[Axum Server]
+    D[Redis Cache]
     C[PostgreSQL Database]
+
 %% Edges
     A -->|Sends HTTP Request| B
+    B -->|Reads/Writes Cache| D
+    D -->|Cache Miss| B
     B -->|Queries Database| C
     C -->|Returns Data| B
+    B -->|Updates Cache| D
     B -->|Sends HTTP Response| A
+
 %% Styles
-    classDef arduino fill: #00979D, stroke: #004d4d, stroke-width: 2px, color: #fff, font-weight: bold;
-    classDef axum fill: #dea584, stroke: #b36723, stroke-width: 2px, color: #000, font-weight: bold;
-    classDef postgres fill: #336791, stroke: #1f3d5d, stroke-width: 2px, color: #fff, font-weight: bold;
+    classDef arduino fill:#00979D,stroke:#004d4d,stroke-width:2px,color:#fff,font-weight:bold;
+    classDef axum fill:#dea584,stroke:#b36723,stroke-width:2px,color:#000,font-weight:bold;
+    classDef postgres fill:#336791,stroke:#1f3d5d,stroke-width:2px,color:#fff,font-weight:bold;
+    classDef redis fill:#dc382d,stroke:#8b1d18,stroke-width:2px,color:#fff,font-weight:bold;
+
     class A arduino;
     class B axum;
     class C postgres;
+    class D redis;
+
 ```
 
 ## 🛠 Code quality
