@@ -15,7 +15,9 @@ categories = ["network-programming", "web-programming"]
 axum = { version = "0.8.4", features = ["macros"] }
 tokio = { version = "1.47.1", features = ["full"] }
 serde = { version = "1.0.226", features = ["derive"] }
-sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio-rustls", "chrono"] }
+tokio-postgres = { version = "0.7.12", features = ["with-chrono-0_4"] }
+bb8 = "0.9.1"
+bb8-postgres = "0.9.0"
 tower-http = { version = "0.6.6", features = ["cors", "trace"] }
 chrono = { version = "0.4.42", features = ["serde"] }
 http = "1.3.1"

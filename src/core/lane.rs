@@ -1,7 +1,4 @@
 use serde::{Deserialize, Deserializer, Serialize};
-use sqlx::Type;
-use sqlx::postgres::{PgTypeInfo, PgValueRef};
-use sqlx::{Decode, Postgres, error::BoxDynError};
 
 /// Represents the lane of a vehicle in a two-lane road.
 ///
@@ -41,21 +38,6 @@ impl Serialize for Lane {
             Self::Right => 1_u8,
         };
         serializer.serialize_u8(value)
-    }
-}
-
-/// Decodes `Lane` from PostgreSQL integer values
-impl<'r> Decode<'r, Postgres> for Lane {
-    fn decode(value: PgValueRef<'r>) -> Result<Self, BoxDynError> {
-        let v = <i32 as Decode<Postgres>>::decode(value)?;
-        Self::try_from(v).map_err(|_| "invalid value for Lane".into())
-    }
-}
-
-/// Maps `Lane` to PostgreSQL INT4 type
-impl Type<Postgres> for Lane {
-    fn type_info() -> PgTypeInfo {
-        <i32 as Type<Postgres>>::type_info()
     }
 }
 
