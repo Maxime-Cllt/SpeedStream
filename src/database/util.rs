@@ -4,25 +4,25 @@ use crate::database::types::DbError;
 
 /// Optimized timeout for INSERT operations
 ///
-/// Reduced from 5s to 3s - INSERT operations with proper indexes
+/// INSERT operations with proper indexes
 /// should complete quickly. Longer timeout may indicate database issues.
 pub const INSERT_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// Optimized timeout for simple SELECT queries
 ///
-/// Reduced from 5s to 2s - Simple SELECTs with LIMIT and indexes
+/// Simple SELECTs with LIMIT and indexes
 /// complete in <100ms typically. 2s is generous for network latency.
 pub const SIMPLE_SELECT_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// Timeout for range queries (date ranges, pagination)
 ///
-/// Reduced from 5s to 4s - Range queries may scan more rows,
+/// Range queries may scan more rows,
 /// but with proper indexes should still complete quickly.
 pub const RANGE_QUERY_TIMEOUT: Duration = Duration::from_secs(4);
 
 /// Optimized timeout for authentication queries
 ///
-/// Reduced from 5s to 1s - Auth queries are critical path and
+/// Auth queries are critical path and
 /// Redis-cached, so should be very fast. Low timeout acceptable.
 pub const AUTH_QUERY_TIMEOUT: Duration = Duration::from_secs(1);
 

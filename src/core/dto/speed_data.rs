@@ -74,4 +74,5 @@ mod tests {
         assert_eq!(sensor_data.lane, Lane::Left);
         assert_eq!(sensor_data.created_at, created_at);
     }
+
 }

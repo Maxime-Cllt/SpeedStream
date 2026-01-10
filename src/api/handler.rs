@@ -8,7 +8,7 @@ use crate::database::cache::*;
 use crate::database::crud::*;
 use crate::log_error;
 use axum::extract::Query;
-use axum::http::{HeaderValue, header};
+use axum::http::{header, HeaderValue};
 use axum::response::sse::{Event, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::{extract::State, http::StatusCode, response::Json};
@@ -30,16 +30,23 @@ where
 }
 
 /// Handler functions for the API
-pub async fn health_check(State(state): State<AppState>) -> Result<Json<String>, StatusCode> {
+pub async fn health_check(State(mut state): State<AppState>) -> Result<Json<String>, StatusCode> {
     let conn = match state.db.get().await {
         Ok(conn) => conn,
         Err(_) => return Err(StatusCode::SERVICE_UNAVAILABLE),
     };
 
+    // Test postgres connection
     match conn.query("SELECT 1", &[]).await {
         Ok(_) => {
-            let today: String = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
-            Ok(Json(format!("API is healthy! Current time: {today}")))
+            // Test Redis connection
+            match redis::cmd("PING")
+                .query_async::<String>(&mut state.redis)
+                .await
+            {
+                Ok(_) => Ok(Json(String::from("true"))),
+                Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+            }
         }
         Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
