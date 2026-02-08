@@ -1,56 +1,46 @@
-# Multi-stage build for Rust application
-FROM rust:1.92-slim as builder
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create app directory
+# --- Stage 1: Chef (Préparation du cache) ---
+FROM rust:1.93-slim AS chef
+RUN cargo install cargo-chef
 WORKDIR /app
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock ./
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Copy source code
-COPY src/ ./src/
+# --- Stage 2: Builder ---
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Installation des libs de build
+RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev \
+    && cargo chef cook --release --recipe-path recipe.json
 
-# Build for release
-RUN cargo build --release
+COPY . .
+RUN cargo build --release --bin SpeedStream
+# On "nettoie" le binaire des symboles de debug (gain de place massif)
+RUN strip target/release/SpeedStream
 
-# Runtime stage
-FROM debian:bookworm-slim
+# --- Stage 3: Runtime (Le plus léger et sécurisé possible) ---
+FROM debian:bookworm-slim AS runtime
 
-# Install runtime dependencies
+# On crée l'utilisateur avant d'installer quoi que ce soit
+RUN groupadd -r speedstream && useradd -r -g speedstream speedstream
+
+# Installation des libs de RUNTIME uniquement
+# libpq5 et ca-certificates sont essentiels pour Postgres et le SSL
 RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl3 \
     libpq5 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app user
-RUN useradd -r -s /bin/false speedstream
-
-# Create app directory
 WORKDIR /app
 
-# Copy the binary from builder stage
-COPY --from=builder /app/target/release/SpeedStream /app/speedstream
+# Copie du binaire propre
+COPY --from=builder --chown=speedstream:speedstream /app/target/release/SpeedStream /app/speedstream
 
-# Change ownership of the app directory to the app user
-RUN chown -R speedstream:speedstream /app
-
-# Switch to app user
 USER speedstream
 
-# Expose port for Axum application
+# L'astuce pour le port : Axum écoute souvent sur 0.0.0.0:8080
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
-# Run the binary
-CMD ["./speedstream"]
+# On utilise le binaire directement
+ENTRYPOINT ["./speedstream"]
