@@ -1,56 +1,52 @@
-# Multi-stage build for Rust application
-FROM rust:1.92-slim as builder
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create app directory
+# --- Stage 1: Planner (Optimization du cache des dépendances) ---
+FROM rust:1.93-slim AS chef
+RUN cargo install cargo-chef
 WORKDIR /app
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock ./
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Copy source code
-COPY src/ ./src/
+# --- Stage 2: Builder ---
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build des dépendances uniquement (mis en cache tant que Cargo.toml ne change pas)
+RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev \
+    && cargo chef cook --release --recipe-path recipe.json
 
-# Build for release
-RUN cargo build --release
+# Build de l'application
+COPY . .
+RUN cargo build --release --bin SpeedStream
 
-# Runtime stage
-FROM debian:bookworm-slim
+# Optimisation du binaire (réduction de taille ~20-40%)
+RUN strip target/release/SpeedStream
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl3 \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+# --- Stage 3: Runtime (Sécurité maximale et poids plume) ---
+# Utilisation de Distroless pour une surface d'attaque minimale
+FROM gcr.io/distroless/cc-debian12 AS runtime
 
-# Create app user
-RUN useradd -r -s /bin/false speedstream
-
-# Create app directory
 WORKDIR /app
 
-# Copy the binary from builder stage
-COPY --from=builder /app/target/release/SpeedStream /app/speedstream
+# Copie des bibliothèques système nécessaires (libpq, etc.) depuis le builder ou via staging
+# Note : libpq5 et libssl sont souvent requis dynamiquement
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libpq.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libssl.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libcrypto.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/liblber-2.5.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libldap-2.5.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libsasl2.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgnutls.so* /usr/lib/x86_64-linux-gnu/
 
-# Change ownership of the app directory to the app user
-RUN chown -R speedstream:speedstream /app
+# Copie du binaire avec droits restreints d'emblée
+COPY --from=builder --chown=nonroot:nonroot /app/target/release/SpeedStream /app/speedstream
 
-# Switch to app user
-USER speedstream
+# Utilisation de l'utilisateur non-root par défaut de distroless (id 65532)
+USER nonroot
 
-# Expose port for Axum application
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+# Note: Distroless n'a pas 'curl'. Pour un HEALTHCHECK, il est préférable
+# d'utiliser un petit binaire dédié ou de gérer cela via l'orchestrateur (K8s/Docker).
+# Si tu as vraiment besoin d'un healthcheck interne, reste sur debian-slim.
 
-# Run the binary
-CMD ["./speedstream"]
+ENTRYPOINT ["./speedstream"]
