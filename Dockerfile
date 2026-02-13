@@ -39,8 +39,10 @@ COPY --from=builder --chown=speedstream:speedstream /app/target/release/SpeedStr
 
 USER speedstream
 
-# L'astuce pour le port : Axum écoute souvent sur 0.0.0.0:8080
-EXPOSE 8080
+# Port configurable via variable d'environnement (défaut: 8080)
+ENV SERVER_HOST=0.0.0.0
+ENV SERVER_PORT=8080
+EXPOSE ${SERVER_PORT}
 
 # On utilise le binaire directement
 ENTRYPOINT ["./speedstream"]

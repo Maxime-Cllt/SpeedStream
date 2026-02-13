@@ -7,7 +7,7 @@ use speed_stream::api::handler::{
     create_speed, get_last_n_speed, get_last_speed, get_speed_by_date_range, get_speed_pagination,
     get_speed_today, health_check, root, speed_stream,
 };
-use speed_stream::config::constant::{DATABASE_URL, REDIS_URL};
+use speed_stream::config::constant::{DATABASE_URL, HOST, PORT, REDIS_URL};
 use speed_stream::core::app_state::AppState;
 use speed_stream::middleware::auth::auth_middleware;
 use speed_stream::telemetry::tracing::log_level::LogLevel;
@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(app_state);
 
     // Bind to address and serve the application
-    let listener: TcpListener = TcpListener::bind("0.0.0.0:8080").await?;
+    let listener: TcpListener = TcpListener::bind(format!("{}:{}", *HOST, *PORT)).await?;
 
     println!("Listening on http://{}", listener.local_addr()?);
 

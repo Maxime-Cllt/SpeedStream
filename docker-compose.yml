@@ -28,7 +28,7 @@ services:
     container_name: speedstream-redis
     restart: unless-stopped
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-Nouba123!}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     networks:
@@ -38,7 +38,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    command: redis-server --requirepass ${REDIS_PASSWORD:-Nouba123!} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
 
   # Rust API Application
   api:
@@ -46,14 +46,14 @@ services:
     container_name: speedstream-api
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
     environment:
       - DATABASE_URL=postgresql://speedstream:speedstream123@postgres:5432/speedstream_db
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-Nouba123!}
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8080
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SERVER_HOST=${SERVER_HOST:-0.0.0.0}
+      - SERVER_PORT=${SERVER_PORT:-8080}
       - RUST_LOG=speedstream=debug,tower_http=debug
       - DB_MAX_CONNECTIONS=20
       - DB_MIN_CONNECTIONS=5
@@ -65,7 +65,7 @@ services:
     networks:
       - speedstream-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:${SERVER_PORT:-8080}/health" ]
       interval: 30s
       timeout: 10s
       retries: 3

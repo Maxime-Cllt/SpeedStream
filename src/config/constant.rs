@@ -37,3 +37,17 @@ pub static ALLOWED_ORIGINS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .filter(|s| !s.is_empty())
         .collect()
 });
+
+/// Server host
+pub static HOST: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("SERVER_HOST").unwrap_or_else(|_| "0.0.0.0".to_string())
+});
+
+/// Server port
+pub static PORT: LazyLock<u16> = LazyLock::new(|| {
+    std::env::var("SERVER_PORT")
+        .or_else(|_| std::env::var("PORT"))
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse()
+        .expect("SERVER_PORT must be a number")
+});
