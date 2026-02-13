@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN chown speedstream:speedstream /app
 
 # Copie du binaire propre
 COPY --from=builder --chown=speedstream:speedstream /app/target/release/SpeedStream /app/speedstream
