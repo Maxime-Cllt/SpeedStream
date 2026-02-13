@@ -1,7 +1,14 @@
 use std::sync::LazyLock;
 
 /// Database connection URL
+/// Priority: POSTGRES_URL > individual POSTGRES_* variables
 pub static DATABASE_URL: LazyLock<String> = LazyLock::new(|| {
+    if let Ok(url) = std::env::var("POSTGRES_URL") {
+        if !url.is_empty() {
+            return url;
+        }
+    }
+
     let user = std::env::var("POSTGRES_USER").unwrap_or_else(|_| "speedstream".to_string());
     let password =
         std::env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "speedstream123".to_string());
@@ -13,7 +20,14 @@ pub static DATABASE_URL: LazyLock<String> = LazyLock::new(|| {
 });
 
 /// Redis connection URL with authentication
+/// Priority: REDIS_URL > individual REDIS_* variables
 pub static REDIS_URL: LazyLock<String> = LazyLock::new(|| {
+    if let Ok(url) = std::env::var("REDIS_URL") {
+        if !url.is_empty() {
+            return url;
+        }
+    }
+
     let host = std::env::var("REDIS_HOST").unwrap_or_else(|_| "redis".to_string());
     let port = std::env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string());
 
