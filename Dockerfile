@@ -10,9 +10,10 @@ RUN cargo chef prepare --recipe-path recipe.json
 # --- Stage 2: Builder ---
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
-# Installation des libs de build
-RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev \
-    && cargo chef cook --release --recipe-path recipe.json
+# Installation des libs de build + mold (linker rapide)
+RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev mold clang
+ENV RUSTFLAGS="-C linker=clang -C link-arg=-fuse-ld=mold"
+RUN cargo chef cook --release --recipe-path recipe.json
 
 COPY . .
 RUN cargo build --release --bin SpeedStream
