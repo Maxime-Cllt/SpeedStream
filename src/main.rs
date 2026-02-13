@@ -12,6 +12,7 @@ use speed_stream::core::app_state::AppState;
 use speed_stream::middleware::auth::auth_middleware;
 use speed_stream::telemetry::tracing::log_level::LogLevel;
 use speed_stream::telemetry::tracing::logger::Logger;
+use speed_stream::{log_error, log_info};
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -21,23 +22,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dotenv_path = std::env::current_dir()?.join(".env");
     dotenvy::from_path(dotenv_path).ok();
 
-    println!("Starting Sensor API Server...");
-
     // Create a logger that writes to "app.log" with minimum level of Info
     Logger::init("app.log", LogLevel::Trace)?;
 
-    // Configure database connection pool (bb8 with tokio-postgres)
-    let pool = speed_stream::database::pool::create_pool(DATABASE_URL.as_str()).await?;
+    log_info!("Starting Sensor API Server...");
 
-    println!(
-        "Connected to Postgres database (pool: 5-20 connections with bb8)"
-    );
+    // Configure database connection pool (bb8 with tokio-postgres)
+    log_info!("Connecting to Postgres at: {}", DATABASE_URL.as_str());
+    let pool = speed_stream::database::pool::create_pool(DATABASE_URL.as_str())
+        .await
+        .map_err(|e| {
+            log_error!("Failed to connect to Postgres: {e}");
+            e
+        })?;
+
+    log_info!("Connected to Postgres database (pool: 5-20 connections with bb8)");
 
     // Initialize Redis connection
-    let redis_client = Client::open(REDIS_URL.as_str())?;
-    let redis_manager = redis::aio::ConnectionManager::new(redis_client).await?;
+    log_info!("Connecting to Redis at: {}", REDIS_URL.as_str());
+    let redis_client = Client::open(REDIS_URL.as_str()).map_err(|e| {
+        log_error!("Failed to create Redis client: {e}");
+        e
+    })?;
+    let redis_manager = redis::aio::ConnectionManager::new(redis_client)
+        .await
+        .map_err(|e| {
+            log_error!("Failed to connect to Redis: {e}");
+            e
+        })?;
 
-    println!("Connected to Redis cache");
+    log_info!("Connected to Redis cache");
 
     // Create broadcast channel for real-time speed notifications
     // Channel capacity of 1000 means it can hold up to 1000 messages before dropping oldest
@@ -76,12 +90,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(app_state);
 
     // Bind to address and serve the application
-    let listener: TcpListener = TcpListener::bind(format!("{}:{}", *HOST, *PORT)).await?;
+    let addr = format!("{}:{}", *HOST, *PORT);
+    log_info!("Binding to {addr}");
+    let listener: TcpListener = TcpListener::bind(&addr).await.map_err(|e| {
+        log_error!("Failed to bind to {addr}: {e}");
+        e
+    })?;
 
-    println!("Listening on http://{}", listener.local_addr()?);
+    log_info!("Listening on http://{}", listener.local_addr()?);
 
     axum::serve(listener, app).await.map_err(|e| {
-        eprintln!("Server error: {e}");
+        log_error!("Server error: {e}");
         e
     })?;
 

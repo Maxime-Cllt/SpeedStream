@@ -33,9 +33,14 @@ impl InternalLogger {
         let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S%.3f UTC");
         let log_entry = format!("[{timestamp}] {} - {message}\n", level.as_str());
 
+        // Write to file
         let mut file = self.file.lock().unwrap();
         file.write_all(log_entry.as_bytes())?;
         file.flush()?;
+
+        // Write to stderr for Docker/container log capture
+        eprint!("{log_entry}");
+
         Ok(())
     }
 }
