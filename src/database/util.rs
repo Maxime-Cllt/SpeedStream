@@ -27,17 +27,6 @@ pub const RANGE_QUERY_TIMEOUT: Duration = Duration::from_secs(4);
 pub const AUTH_QUERY_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// Wraps a database operation with a timeout
-///
-/// Prevents indefinite hangs on database operations by enforcing
-/// a maximum execution time. Converts timeout errors to DbError::Timeout.
-///
-/// # Example
-/// ```
-/// let result = with_timeout(
-///     query_future,
-///     INSERT_TIMEOUT
-/// ).await?;
-/// ```
 pub async fn with_timeout<T, F>(fut: F, timeout: Duration) -> Result<T, DbError>
 where
     F: Future<Output = Result<T, DbError>>,
